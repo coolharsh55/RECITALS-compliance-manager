@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+rdflib
+pyshacl
+python-multipart
+requests
