@@ -1,0 +1,181 @@
+@prefix ex: <http://example.com/> .
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix risk: <https://w3id.org/dpv/risk#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+#each activity needs to be checked for controller
+# ex:ProcessingActivityForJointController
+#     a dpv:Processing ;
+#     dpv:hasLegalBasis dpv:Contract ;
+#     dpv:hasPurpose ex:CustomerManagementPurpose ; # A30-1-14
+#     dpv:hasDataSubject ex:Customers ; # A30-1-15
+#     dpv:hasPersonalData ex:ContactData ; # A30-1-16
+#     dpv:hasPersonalData ex:BiometricData ;
+#     dpv:hasStorageCondition ex:StoragePolicy1 ;
+#     dpv:hasTechnicalMeasure ex:EncryptionMeasure ;
+#     dpv:hasOrganisationalMeasure ex:AccessControlPolicy ;
+#     dpv:hasRiskLevel risk:LowRisk;   
+#     dpv:hasFrequency dpv:ContinuousFrequency ;  
+#     dpv:hasTransfer ex:TransferProcessor ;  
+#     dpv:hasTransfer ex:TransferController . # A30-1-18.
+
+
+ex:ProcessingActivityForJointController
+    a dpv:Process ;
+    dpv:hasLegalBasis dpv:JointDataControllersAgreement ;
+    dpv:hasPurpose ex:CustomerManagementPurpose ; # A30-1-14
+    dpv:hasJointDataController ex:JointController1 ; # A30-1-11  
+    dpv:hasDataSubject ex:Customers ; # A30-1-15
+    dpv:hasPersonalData ex:ContactData ; # A30-1-16
+    dpv:hasPersonalData ex:BiometricData ;
+    #dpv:hasRecipient ex:CloudProvider ; # A30-1-17
+    dpv:hasStorageCondition ex:StoragePolicy1 ;
+    dpv:hasTechnicalMeasure ex:EncryptionMeasure ;
+    dpv:hasOrganisationalMeasure ex:AccessControlPolicy ;
+    dpv:hasRiskLevel risk:LowRisk;   
+    dpv:hasFrequency dpv:ContinuousFrequency ;
+    dpv:hasTransfer ex:TransferController . # A30-1-18.
+
+ex:BiometricData rdf:type dpv:SpecialCategoryPersonalData .
+
+ex:ControllerROPA
+    a dpv:ROPA ; 
+    dpv:hasDataController ex:ExampleController ; # G_Base-1
+    dpv:hasDataProtectionOfficer ex:DPO1 ; # A30-1-8
+    dpv:hasRepresentative ex:EURepresentative ; # A30-1-5
+    dpv:hasProcess ex:ProcessingActivityForJointController . 
+
+ex:ExampleController
+    a dpv:DataController ;
+    dpv:hasName "Example Corp Ltd" ; # A30.1.3
+    dpv:hasContact "privacy@example.com" ;# A30-1-4
+    dpv:hasRecordOfActivity ex:ControllerROPA . # A30.1.1
+
+ex:ControllerROPA
+    a dpv:ROPA . 
+# Optional Representative
+ex:EURepresentative
+    a dpv:Representative ;
+    dpv:hasName "EU Rep Services GmbH" ; # A30-1-6
+    dpv:hasContact "contact@eurep.eu" . # A30-1-7
+
+#Controller's info
+ex:DPO1
+    a dpv:DataProtectionOfficer ;
+    dpv:hasName "Jane Smith" ; # A30-1-9
+    dpv:hasContact "dpo@example.com" . # A30-1-10   
+
+ex:JointController1
+    a dpv:JointDataController ;
+    dpv:hasName "Partner Corp" ; # A30-1-12
+    dpv:hasContact "contact@partner.com" . # A30-1-13
+
+ex:CustomerManagementPurpose
+    a dpv:Purpose ;
+    dpv:hasName "Customer account management" .
+
+ex:Customers
+    a dpv:DataSubject ;
+    dpv:hasName "Customers" .
+
+ex:ContactData
+    a dpv:PersonalDataCategory ;
+    dpv:hasName "Contact details" .
+
+ex:CloudProvider
+    a dpv:Recipient ;
+    dpv:hasName "Cloud Hosting Ltd" ;
+    dpv:hasLocation ex:Germany .
+
+ex:TransferController
+    a dpv:Transfer ;
+    dpv:hasDataExporter ex:ExampleController ;
+    dpv:hasDataImporter ex:USServiceProvider ;
+    dpv:hasLegalBasis dpv:Consent .
+
+ex:USServiceProvider
+    a dpv:Recipient ;
+    dpv:hasName "US Analytics Inc" ;
+    dpv:hasThirdCountry ex:UnitedStates; #dpv:ThirdCountry
+    dpv:hasLocation ex:UnitedStates . # A30-1-19 A30-1-20
+
+ex:UnitedStates a dpv:Country, dpv:ThirdCountry.
+ex:Germany a dpv:Country.
+
+ex:UNAgency
+    a dpv:InternationalOrganisation, dpv:Recipient ;
+    dpv:hasName "UN Research Agency" .
+
+ex:TransferProcessor
+    a dpv:Transfer ;
+    dpv:hasDataExporter ex:ExampleController ;
+    dpv:hasDataImporter ex:UNAgency ;
+    dpv:hasLegalBasis dpv:PublicInterest .
+
+ex:StoragePolicy1
+    a dpv:StorageDuration ;
+    dpv:hasDuration "P2Y"^^xsd:duration ;
+    dpv:hasName "Stored for 2 years after account closure" .
+
+ex:EncryptionMeasure
+    a dpv:TechnicalMeasure ;
+    dpv:hasName "AES-256 Encryption" .
+
+ex:AccessControlPolicy
+    a dpv:OrganisationalMeasure ;
+    dpv:hasName "Role-based access control policy" .
+
+#Processor 
+
+ex:ExampleSubProcessor
+    a dpv:DataSubProcessor ;
+    dpv:hasName "Data Processing Services Ltd" ; # A30-1-29
+    dpv:hasContact "info@processor.com" ; # A30-1-30
+    dpv:hasRecordOfActivity ex:ProcessorROPA .
+
+ex:ExampleMainProcessor
+    a dpv:DataProcessor , dpv:SMEOrganisation;
+    dpv:hasName "Processing Company" ; # A30-1-29
+    dpv:hasContact "info2@company.com" ; # A30-1-30
+    dpv:hasRecordOfActivity ex:ProcessorROPA .
+
+#dpv:DataSubProcessor rdfs:subClassOf dpv:DataProcessor .
+
+ex:ProcessorROPA
+    a dpv:ROPA ; # or DataProcessingRecord # A30-1-27
+    dpv:hasLegalBasis dpv:SubProcessorAgreement;
+    dpv:hasDataProcessor ex:ExampleMainProcessor ; # G_Base-1
+    dpv:hasDataProcessor ex:ExampleSubProcessor ; # A30-1-36
+    dpv:hasRepresentative ex:EURepresentative ; # A30-1-31
+    dpv:hasDataProtectionOfficer ex:DPO1 ; # A30-1-34
+    dpv:hasTechnicalMeasure ex:EncryptionMeasure ;
+    dpv:hasOrganisationalMeasure ex:AccessControlPolicy;
+    dpv:hasProcess ex:ProcessingActivityForProcessor . 
+
+ex:ControllerROPA
+    a dpv:ROPA ; # or RecordsOfActivities
+    dpv:hasDataController ex:ExampleController ; # G_Base-1
+    dpv:hasDataProtectionOfficer ex:DPO1 ; # A30-1-8
+    dpv:hasRepresentative ex:EURepresentative ; # A30-1-5
+    dpv:hasProcess ex:ProcessingActivityForJointController . 
+
+ex:ProcessingActivityForProcessor
+    a dpv:Process ;
+    dpv:hasLegalBasis dpv:ControllerProcessorAgreement ;
+    #dpv:hasLegalBasis dpv:JointDataControllersAgreement ;
+    dpv:hasPurpose ex:CustomerManagementPurpose ; # A30-1-39
+    dpv:hasJointDataController ex:JointController1 ; # A30-1-11  
+    dpv:hasDataSubject ex:Customers ; # A30-1-15
+    #dpv:hasRecipient ex:ExampleMainProcessor ; # A30-1-42
+    dpv:hasPersonalData ex:ContactData ; # A30-1-16
+    dpv:hasStorageCondition ex:StoragePolicy1 ;
+    dpv:hasTechnicalMeasure ex:EncryptionMeasure ;
+    dpv:hasOrganisationalMeasure ex:AccessControlPolicy .
+
+ex:ContactData rdf:type dpv:PersonalData.
+# ex:ExampleController
+#     ex:employeeCount "120"^^xsd:integer ;
+#     ex:isLowRiskProcessing true ;
+#     ex:isOccasionalProcessing true ;
+#     ex:hasSpecialCategoryData false .

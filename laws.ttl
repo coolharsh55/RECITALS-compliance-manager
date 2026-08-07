@@ -1,0 +1,15 @@
+
+@prefix recitals: <http://example.org/recitals/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+recitals:GDPR
+    a recitals:Law ;
+    rdfs:label "General Data Protection Regulation" .
+
+recitals:NIS2
+    a recitals:Law ;
+    rdfs:label "Network and Information Security Directive 2" .
+
+recitals:EU_AI_ACT
+    a recitals:Law ;
+    rdfs:label "Regulation on Artificial Intelligence (EU AI Act)" .

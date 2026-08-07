@@ -1,6 +1,6 @@
 fastapi
 uvicorn
+pydantic
 rdflib
-pyshacl
-python-multipart
 requests
+python-multipart
