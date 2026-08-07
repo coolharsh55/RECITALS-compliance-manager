@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # RECITALS
+=======
+# RECITALS-compliance-manager
+>>>>>>> 21cefc6b0e548942758b7656e28b79ede5032167
 
 RECITALS is a compliance management system that validates RDF data using SHACL shapes and stores/queries data using an Apache Jena Fuseki triple store. The system is fully containerized and orchestrated using Docker Compose.
 
@@ -56,6 +60,7 @@ docker compose down
 
 ## 5. Example API Usage
 
+<<<<<<< HEAD
 ### DPO use-case workflow (GDPR Article 30)
 
 The prototype supports an isolated named graph for each use case. This is the
@@ -108,6 +113,8 @@ different law or article.
 `POST /input` and `POST /validate` remain available for older RDF-upload
 clients. New integrations should use `/use-cases` and `/check`.
 
+=======
+>>>>>>> 21cefc6b0e548942758b7656e28b79ede5032167
 #### Input API (http://localhost:8000): POST – Submit RDF data
 
 Used to send RDF data to the system and store it in Fuseki.
