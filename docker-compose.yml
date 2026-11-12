@@ -1,64 +1,62 @@
-#version: "3.8"
+# Credentials come from .env (copy .env.example to .env first).
+# All ports are published on 127.0.0.1 only: reachable from this machine,
+# not from the network.
+
+x-fuseki-credentials: &fuseki-credentials
+  FUSEKI_USER: ${FUSEKI_USER:?copy .env.example to .env and set FUSEKI_USER}
+  FUSEKI_PASSWORD: ${FUSEKI_PASSWORD:?copy .env.example to .env and set FUSEKI_PASSWORD}
 
 services:
+  # Triple store holding the use cases, uploaded data and assessments
   fuseki:
     image: stain/jena-fuseki
     container_name: fuseki
     ports:
-      - "3030:3030"
+      # Only this machine; the APIs reach Fuseki over the compose network.
+      - "127.0.0.1:3030:3030"
     volumes:
       - fuseki-data:/fuseki
+      - ./fuseki/shiro.ini:/fuseki-config/shiro.ini:ro
     environment:
-      - ADMIN_PASSWORD=admin
+      <<: *fuseki-credentials
+      ADMIN_PASSWORD: ${FUSEKI_PASSWORD}
+    # Write shiro.ini from the template on every start, so a password
+    # changed in .env takes effect (the image only sets it on first start).
     command: >
-      sh -c "mkdir -p /fuseki/databases &&
+      sh -c "envsubst '$${FUSEKI_USER} $${FUSEKI_PASSWORD}' < /fuseki-config/shiro.ini > /fuseki/shiro.ini &&
+            mkdir -p /fuseki/databases &&
             /jena-fuseki/fuseki-server --tdb2 --loc=/fuseki/databases --update /dataset"
 
+  # Creates use cases and stores uploaded Turtle data (port 8000)
   input-api:
     build: ./input-api
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    environment:
+      <<: *fuseki-credentials
     depends_on:
       - fuseki
 
+  # Runs the article checks and serves the /ui page (port 8001)
   compliance-api:
     build: ./compliance-api
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
+    environment:
+      <<: *fuseki-credentials
     depends_on:
       - fuseki
 
+  # Returns the latest stored result per use case, law and article (port 8002)
   status-api:
     build: ./status-api
     ports:
-      - "8002:8000"
+      - "127.0.0.1:8002:8000"
+    environment:
+      <<: *fuseki-credentials
     depends_on:
       - fuseki
 
+# Fuseki's database, kept between restarts (docker compose down -v deletes it)
 volumes:
   fuseki-data:
-
-
-#version: "3.8"
-
-# services:
-#   api:
-#     build: .
-#     ports:
-#       - "8000:8000"
-#     depends_on:
-#       - fuseki
-#     environment:
-#       - FUSEKI_URL=http://fuseki:3030/ds
-#       - FUSEKI_USER=admin
-#       - FUSEKI_PASSWORD=admin
-#       - FUSEKI_DATASET_1=ds
-
-#   fuseki:
-#     image: stain/jena-fuseki
-#     ports:
-#       - "3030:3030"
-#     environment:
-#       - ADMIN_PASSWORD=admin
-#     volumes:
-#       - ./fuseki-config.ttl:/fuseki/config.ttl

@@ -2,6 +2,7 @@
 @prefix dpv: <https://w3id.org/dpv#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix risk: <https://w3id.org/dpv/risk#> .
+@prefix pd: <https://w3id.org/dpv/pd#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
 #each activity needs to be checked for controller
@@ -17,15 +18,15 @@
 #     dpv:hasOrganisationalMeasure ex:AccessControlPolicy ;
 #     dpv:hasRiskLevel risk:LowRisk;   
 #     dpv:hasFrequency dpv:ContinuousFrequency ;  
-#     dpv:hasTransfer ex:TransferProcessor ;  
-#     dpv:hasTransfer ex:TransferController . # A30-1-18.
+#     dpv:hasProcessing ex:TransferProcessor ;  
+#     dpv:hasProcessing ex:TransferController . # A30-1-18.
 
 
 ex:ProcessingActivityForJointController
     a dpv:Process ;
     dpv:hasLegalBasis dpv:JointDataControllersAgreement ;
     dpv:hasPurpose ex:CustomerManagementPurpose ; # A30-1-14
-    dpv:hasJointDataController ex:JointController1 ; # A30-1-11  
+    dpv:hasJointDataControllers ex:JointController1 ; # A30-1-11  
     dpv:hasDataSubject ex:Customers ; # A30-1-15
     dpv:hasPersonalData ex:ContactData ; # A30-1-16
     dpv:hasPersonalData ex:BiometricData ;
@@ -35,7 +36,7 @@ ex:ProcessingActivityForJointController
     dpv:hasOrganisationalMeasure ex:AccessControlPolicy ;
     dpv:hasRiskLevel risk:LowRisk;   
     dpv:hasFrequency dpv:ContinuousFrequency ;
-    dpv:hasTransfer ex:TransferController . # A30-1-18.
+    dpv:hasProcessing ex:TransferController . # A30-1-18.
 
 ex:BiometricData rdf:type dpv:SpecialCategoryPersonalData .
 
@@ -67,7 +68,7 @@ ex:DPO1
     dpv:hasContact "dpo@example.com" . # A30-1-10   
 
 ex:JointController1
-    a dpv:JointDataController ;
+    a dpv:JointDataControllers ;
     dpv:hasName "Partner Corp" ; # A30-1-12
     dpv:hasContact "contact@partner.com" . # A30-1-13
 
@@ -80,7 +81,7 @@ ex:Customers
     dpv:hasName "Customers" .
 
 ex:ContactData
-    a dpv:PersonalDataCategory ;
+    a pd:Contact ;
     dpv:hasName "Contact details" .
 
 ex:CloudProvider
@@ -164,7 +165,7 @@ ex:ProcessingActivityForProcessor
     dpv:hasLegalBasis dpv:ControllerProcessorAgreement ;
     #dpv:hasLegalBasis dpv:JointDataControllersAgreement ;
     dpv:hasPurpose ex:CustomerManagementPurpose ; # A30-1-39
-    dpv:hasJointDataController ex:JointController1 ; # A30-1-11  
+    dpv:hasJointDataControllers ex:JointController1 ; # A30-1-11  
     dpv:hasDataSubject ex:Customers ; # A30-1-15
     #dpv:hasRecipient ex:ExampleMainProcessor ; # A30-1-42
     dpv:hasPersonalData ex:ContactData ; # A30-1-16

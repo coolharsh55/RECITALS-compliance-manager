@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS Finder metadata
+.DS_Store
+
+# Generated validation output
+validation_report*.ttl
+examples/validation_results.json

@@ -6,6 +6,31 @@
 @prefix dct: <http://purl.org/dc/terms/> .
 
 #################################################
+# GDPR Article 30 - Records of processing activities
+#
+# DPV terms follow DPV 2.3. For data written before that,
+# these older names are still accepted:
+#   dpv:hasJointDataController  (DPV 2.3: dpv:hasJointDataControllers)
+#   dpv:JointDataController     (DPV 2.3: dpv:JointDataControllers)
+# Not used by these shapes, so no alternative is needed:
+#   dpv:hasTransfer   (link a dpv:Transfer with dpv:hasProcessing)
+#   dpv:PersonalDataCategory (use dpv:PersonalData or a pd: category)
+#################################################
+
+#################################################
+# Prefixes available to SPARQL-based constraints
+#################################################
+
+ex:
+    sh:declare [
+        sh:prefix "dpv" ;
+        sh:namespace "https://w3id.org/dpv#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] .
+
+#################################################
 # BASE ROPA Shape
 #################################################
 
@@ -14,6 +39,7 @@ ex:BaseROPAShape
     sh:targetClass dpv:ROPA ;
     dct:identifier "G_Base-1"^^xsd:string;
 
+    # GDPR Art. 30(1)/(2): ROPA must identify at least a Data Controller or a Data Processor
     sh:or (        
         [
             sh:property [
@@ -66,10 +92,10 @@ ex:ProcessingShape
 
     # Joint Controller
     sh:property [
-        sh:path dpv:hasJointDataController ;
+        sh:path [ sh:alternativePath ( dpv:hasJointDataControllers dpv:hasJointDataController ) ] ;
         dct:identifier "A30-1-11"^^xsd:string;
         sh:minCount 1 ;
-        sh:class dpv:JointDataController ;
+        sh:or ( [ sh:class dpv:JointDataControllers ] [ sh:class dpv:JointDataController ] ) ;
         sh:message "Another organisation not identified as joint controllers." ;
     ] ;
 
@@ -118,7 +144,7 @@ ex:ProcessingShape
         dct:identifier "A30-1-24"^^xsd:string;
         sh:minCount 1 ;
         sh:class dpv:StorageDuration ;
-        sh:message "duration of storage of personal data after which it will be erased if not furtehr needed not contained." ;
+        sh:message "duration of storage of personal data after which it will be erased if not further needed not contained." ;
     ] ;
 
     # Technical Measures
@@ -159,6 +185,7 @@ ex:TransferShape
         sh:message "Activity does not contain categories of recipients." ;
     ] ;
 
+    # GDPR Art. 30(1)(e): a transfer must state its legal basis
     sh:property [
         sh:path dpv:hasLegalBasis ;
         sh:minCount 1 ;
@@ -172,14 +199,17 @@ ex:TransferShape
 ex:RecipientShape
     a sh:NodeShape ;
     sh:targetClass dpv:Recipient ;
+    # All checks below are warnings. SHACL takes the severity of a
+    # SPARQL constraint from its shape, so it is set here.
+    sh:severity sh:Warning ;
 
     #############################################
     # 1. Missing Location
     #############################################
     sh:sparql [
         a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
         sh:message "Location of recipient not identified." ;
-        sh:severity sh:Warning ;
         dct:identifier "A30-1-19"^^xsd:string ;
 
         sh:select """
@@ -196,8 +226,8 @@ ex:RecipientShape
     #############################################
     sh:sparql [
         a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
         sh:message "Location of recipient is a third country." ;
-        sh:severity sh:Warning ;
         dct:identifier "A30-1-20"^^xsd:string ;
 
         sh:select """
@@ -224,8 +254,8 @@ ex:RecipientShape
     #############################################
     sh:sparql [
         a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
         sh:message "Recipient is an international organisation." ;
-        sh:severity sh:Warning ;
         dct:identifier "A30-1-22"^^xsd:string ;
 
         sh:select """
@@ -318,6 +348,7 @@ ex:ControllerROPAShape
     a sh:NodeShape ;
     sh:targetSubjectsOf dpv:hasDataController ;
 
+    # GDPR Art. 30(1)(b): controller ROPA must reference at least one processing activity
     sh:property [
         sh:path dpv:hasProcess ;
         #dct:identifier "A30-1-22"^^xsd:string;
@@ -326,6 +357,7 @@ ex:ControllerROPAShape
         sh:message "Controller ROPA must reference at least one processing activity." ;
     ] ;
 
+    # GDPR Art. 30(1)(a): controller ROPA must include the Controller's Representative
     sh:property [
         sh:path dpv:hasRepresentative ;
         dct:identifier "A30-1-5"^^xsd:string;
@@ -334,6 +366,7 @@ ex:ControllerROPAShape
         sh:message "Controller ROPA must include the Controller's Representative." ;
     ] ;
 
+    # GDPR Art. 30(1)(a): controller ROPA must include a Data Protection Officer where required
     sh:property [
         sh:path dpv:hasDataProtectionOfficer ;
         dct:identifier "A30-1-8"^^xsd:string;
@@ -352,6 +385,7 @@ ex:ControllerShape
     a sh:NodeShape ;
     sh:targetClass dpv:DataController ;
 
+    # GDPR Art. 30(1): controller does not have a ROPA
     sh:property [
         sh:path dpv:hasRecordOfActivity ;
         dct:identifier "A30-1-1"^^xsd:string;
@@ -359,14 +393,16 @@ ex:ControllerShape
         sh:class dpv:ROPA ;
         sh:message "Controller does not have a ROPA." ] ; 
 
+    # GDPR Art. 30(1)(a): ROPA does not contain name of controller
     sh:property [
         sh:path dpv:hasName ;
         dct:identifier "A30-1-3"^^xsd:string;
         sh:minCount 1 ;
         sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." ;
+        sh:message "ROPA does not contain name of controller." ;
     ] ;
 
+    # GDPR Art. 30(1)(a): ROPA does not contain contact details of controller
     sh:property [
         sh:path dpv:hasContact ;
         dct:identifier "A30-1-4"^^xsd:string;
@@ -386,6 +422,7 @@ ex:ProcessorShape
     a sh:NodeShape ;
     sh:targetClass dpv:DataProcessor ;
 
+    # GDPR Art. 30(2): data processor does not have a ROPA
     sh:property [
         sh:path dpv:hasRecordOfActivity ;
         dct:identifier "A30-1-27"^^xsd:string;
@@ -393,20 +430,22 @@ ex:ProcessorShape
         sh:class dpv:ROPA ;
         sh:message "Data Processor does not have a ROPA." ] ;
         
+    # GDPR Art. 30(2)(a): ROPA does not contain name of processor
     sh:property [
         sh:path dpv:hasName ;
         dct:identifier "A30-1-29"^^xsd:string;
         sh:minCount 1 ;
         sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." 
+        sh:message "ROPA does not contain name of processor." 
     ] ;
 
+    # GDPR Art. 30(2)(a): ROPA does not contain contact details of processor
     sh:property [
         sh:path dpv:hasContact ;
         dct:identifier "A30-1-30"^^xsd:string;
         sh:minCount 1 ;
         sh:datatype xsd:string ;
-        sh:message "ROPA does not contain contact details of controller." 
+        sh:message "ROPA does not contain contact details of processor." 
     ] ;
 .
 
@@ -430,6 +469,7 @@ ex:ProcessorROPAShape
     a sh:NodeShape ;
     sh:targetSubjectsOf dpv:hasDataProcessor ;
 
+    # GDPR Art. 30(2)(b): processor ROPA must reference at least one processing activity
     sh:property [
         sh:path dpv:hasProcess ;
         sh:minCount 1 ;
@@ -437,6 +477,7 @@ ex:ProcessorROPAShape
         sh:message "Processor ROPA must reference at least one processing activity." ;
     ] ;
 
+    # GDPR Art. 30(2)(a): processor ROPA must include its Representative
     sh:property [
         sh:path dpv:hasRepresentative ;
         dct:identifier "A30-1-31"^^xsd:string;
@@ -445,6 +486,7 @@ ex:ProcessorROPAShape
         sh:message "Processor ROPA must include its Representative." ;
     ] ;
 
+    # GDPR Art. 30(2)(a): processor ROPA must include a Data Protection Officer where required
     sh:property [
         sh:path dpv:hasDataProtectionOfficer ;
         dct:identifier "A30-1-34"^^xsd:string;
@@ -453,6 +495,7 @@ ex:ProcessorROPAShape
         sh:message "Processor ROPA must include a Data Protection Officer where required." ;
     ] ;
 
+    # GDPR Art. 30(2)(d): processor ROPA must include technical security measures
     sh:property [
         sh:path dpv:hasTechnicalMeasure ;
         dct:identifier "A30-1-50"^^xsd:string;
@@ -460,6 +503,7 @@ ex:ProcessorROPAShape
         sh:message "Processor ROPA must include technical security measures." ;
     ] ;
 
+    # GDPR Art. 30(2)(d): processor ROPA must include organisational security measures
     sh:property [
         sh:path dpv:hasOrganisationalMeasure ;
         dct:identifier "A30-1-51"^^xsd:string;
@@ -475,6 +519,7 @@ ex:RepresentativeShape
     a sh:NodeShape ;
     sh:targetClass dpv:Representative ;
 
+    # GDPR Art. 30(1)(a): ROPA does not contain name of controller's representative
     sh:property [
         sh:path dpv:hasName ;
         dct:identifier "A30-1-6"^^xsd:string;
@@ -485,6 +530,7 @@ ex:RepresentativeShape
         sh:message "ROPA does not contain name of controller's representative." ;
     ] ;
 
+    # GDPR Art. 30(1)(a): ROPA does not contain contact details of controller's representative
     sh:property [
         sh:path dpv:hasContact ;
         dct:identifier "A30-1-7"^^xsd:string;
@@ -506,6 +552,7 @@ ex:DPOShape
     a sh:NodeShape ;
     sh:targetClass dpv:DataProtectionOfficer ;
 
+    # GDPR Art. 30(1)(a): ROPA does not contain name of data protection officer
     sh:property [
         sh:path dpv:hasName ;
         dct:identifier "A30-1-9"^^xsd:string;
@@ -516,6 +563,7 @@ ex:DPOShape
         sh:message "ROPA does not contain name of data protection officer." ;
     ] ;
 
+    # GDPR Art. 30(1)(a): ROPA does not contain contact details of data protection officer
     sh:property [
         sh:path dpv:hasContact ;
         dct:identifier "A30-1-10"^^xsd:string;
@@ -532,8 +580,9 @@ ex:DPOShape
 
 ex:JointControllerShape
     a sh:NodeShape ;
-    sh:targetClass dpv:JointDataController ;
+    sh:targetClass dpv:JointDataControllers , dpv:JointDataController ;
 
+    # GDPR Art. 30(1)(a): ROPA does not contain name of joint controller
     sh:property [
         sh:path dpv:hasName ;
         dct:identifier "A30-1-12"^^xsd:string;
@@ -542,6 +591,7 @@ ex:JointControllerShape
         sh:message "ROPA does not contain name of joint controller." ;
     ] ;
 
+    # GDPR Art. 30(1)(a): ROPA does not contain contact details of joint controller
     sh:property [
         sh:path dpv:hasContact ;
         dct:identifier "A30-1-13"^^xsd:string;

@@ -1,0 +1,69 @@
+# NIS2 Art. 21 - Cybersecurity risk-management measures (NON-COMPLIANT)
+# The same data as nis2_21_compliant.ttl with one change: there is no
+# incident handling procedure
+# (marked "NON-COMPLIANT CHANGE" below).
+# Expected findings:
+#   N21-2-b  Violation  no incident handling
+
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix risk: <https://w3id.org/dpv/risk#> .
+@prefix ex: <http://example.com/> .
+@prefix recitals: <http://example.org/recitals/> .
+
+ex:Harbourview
+    a recitals:EssentialEntity ;
+    dpv:hasName "Harbourview Software Ltd" ;
+    dpv:hasPolicy
+        ex:CyberRiskAnalysisPolicy ,                                 # 21(2)(a)
+        ex:InformationSecurityPolicy ,                               # 21(2)(a)
+        ex:CryptographyPolicy ;                                      # 21(2)(h)
+    dpv:hasOrganisationalMeasure
+        # NON-COMPLIANT CHANGE: incident handling removed; the compliant file has
+        #   ex:IncidentResponseProcedure ,
+        ex:BusinessContinuityPlan ,                                  # 21(2)(c)
+        ex:CrisisManagementPlan ,                                    # 21(2)(c)
+        ex:SupplierSecurityRequirements ,                            # 21(2)(d)
+        ex:SecureDevelopmentLifecycle ,                              # 21(2)(e)
+        ex:AnnualSecurityAudit ,                                     # 21(2)(f)
+        ex:CyberHygieneBaseline ,                                    # 21(2)(g)
+        ex:StaffSecurityAwareness ,                                  # 21(2)(g)
+        ex:StaffScreening ,                                          # 21(2)(i)
+        ex:AssetInventory ,                                          # 21(2)(i)
+        ex:SupplyChainRiskAssessment2026 ;                           # 21(3)
+    dpv:hasTechnicalMeasure
+        ex:NightlyBackups ,                                          # 21(2)(c)
+        ex:RoleBasedAccess ,                                         # 21(2)(i)
+        ex:PlatformEncryption ,                                      # 21(2)(h)
+        ex:StaffMFA ,                                                # 21(2)(j)
+        ex:EncryptedMessaging ,                                      # 21(2)(j)
+        ex:OutOfBandChannel ;                                        # 21(2)(j)
+    recitals:usesICTSupply ex:CloudHosting , ex:Office5GNetwork .    # 21(3)
+
+ex:CyberRiskAnalysisPolicy a risk:RiskManagement ; dpv:hasName "Cyber risk analysis policy (all-hazards)" .
+ex:InformationSecurityPolicy a dpv:InformationSecurityPolicy ; dpv:hasName "Information system security policy" .
+ex:CryptographyPolicy a dpv:CryptographicKeyManagement ; dpv:hasName "Cryptography and key management policy" .
+ex:IncidentResponseProcedure a dpv:IncidentManagementProcedures ; dpv:hasName "Incident handling and NIS2 reporting procedure" .
+ex:BusinessContinuityPlan a dpv:DisasterRecoveryProcedures ; dpv:hasName "Business continuity plan so payroll runs on time" .
+ex:CrisisManagementPlan a recitals:CrisisManagementPlan ; dpv:hasName "Crisis management plan with escalation to the board" .
+ex:SupplierSecurityRequirements a dpv:ThirdPartySecurityProcedures ; dpv:hasName "Security requirements in supplier contracts" .
+ex:SecureDevelopmentLifecycle a dpv:VulnerabilityTestingMethods ; dpv:hasName "Secure development and vulnerability disclosure policy" .
+ex:AnnualSecurityAudit a dpv:EffectivenessDeterminationProcedures ; dpv:hasName "Annual audit of the effectiveness of security measures" .
+ex:CyberHygieneBaseline a recitals:CyberHygienePractices ; dpv:hasName "Patching, password and device hygiene baseline for employees" .
+ex:StaffSecurityAwareness a dpv:CybersecurityTraining ; dpv:hasName "Quarterly security awareness training for all employees" .
+ex:StaffScreening a dpv:BackgroundChecks ; dpv:hasName "Pre-employment screening for staff with access to payroll data" .
+ex:AssetInventory a dpv:AssetManagementProcedures ; dpv:hasName "Inventory of ICT assets and owners" .
+ex:NightlyBackups a dpv:DataBackupProtocols ; dpv:hasName "Encrypted nightly off-site backups" .
+ex:RoleBasedAccess a dpv:AccessControlMethod ; dpv:hasName "Role-based access to customer employee records" .
+ex:PlatformEncryption a dpv:Encryption ; dpv:hasName "Encryption at rest and in transit" .
+ex:StaffMFA a dpv:MultiFactorAuthentication ; dpv:hasName "MFA for all employee accounts" .
+ex:EncryptedMessaging a recitals:SecuredCommunications ; dpv:hasName "End-to-end encrypted voice, video and chat" .
+ex:OutOfBandChannel a recitals:SecuredEmergencyCommunications ; dpv:hasName "Encrypted out-of-band channel for incident response" .
+
+ex:CloudHosting dpv:hasName "Cloud hosting provider for the HR platform" .
+ex:Office5GNetwork dpv:hasName "5G network used by employees' laptops and phones" ;
+    recitals:subjectOfCoordinatedRiskAssessment ex:EU5GRiskAssessment .
+ex:EU5GRiskAssessment a dpv:RiskAssessment ; dpv:hasName "EU coordinated risk assessment of 5G networks" .
+ex:SupplyChainRiskAssessment2026 a dpv:RiskAssessment ;
+    dpv:hasName "ICT supplier risk assessment 2026" ;
+    recitals:assesses ex:CloudHosting , ex:Office5GNetwork ;
+    recitals:takesIntoAccount ex:EU5GRiskAssessment .

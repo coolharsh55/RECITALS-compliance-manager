@@ -1,580 +1,383 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix ex: <http://example.com/> .
 @prefix dpv: <https://w3id.org/dpv#> .
+@prefix ai: <https://w3id.org/dpv/ai#> .
+@prefix eu-aiact: <https://w3id.org/dpv/legal/eu/aiact#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix dct: <http://purl.org/dc/terms/> .
+@prefix recitals: <http://example.org/recitals/> .
 
 #################################################
-# BASE ROPA Shape
+# EU AI Act Article 10 - Data and data governance
+#
+# Applies to high-risk AI systems (eu-aiact:HighRiskAISystem)
+# and the data sets they use. Terms come from DPV 2.3 and its
+# ai: and eu-aiact: extensions. The DPV ontology is not loaded,
+# so a system typed with a narrower concept (for example
+# eu-aiact:HighRiskAISystem-AnnexIII-4-a) also needs the
+# eu-aiact:HighRiskAISystem type.
+#
+#   ?system  ai:hasModel ?model           (a ai:TrainedModel when
+#                                          the system is trained)
+#   ?system  ai:hasTrainingData   ?ds
+#            ai:hasValidationData ?ds
+#            ai:hasTestingData    ?ds
+#   ?system  dpv:hasGeographicCoverage or tech:hasIntendedUse  (Art. 10(4))
+#
+# Data governance practices of each data set, Art. 10(2).
+# A practice counts when the value is the DPV concept itself
+# or an instance of it:
+#   (a) recitals:hasDesignChoice
+#   (b) dpv:hasProcessing ai:DataCollection, dpv:hasDataSource
+#       and, for personal data, dpv:hasPurpose (original purpose)
+#   (c) dpv:hasProcessing ai:DataPreparation, ai:DataAnnotation,
+#       ai:DataLabelling, ai:DataCleaning, ai:DataUpdating,
+#       ai:DataEnrichment or ai:DataAggregation
+#   (d) recitals:hasAssumption
+#   (e) dpv:hasAssessment dpv:DataSuitabilityAssessment
+#   (f) dpv:hasAssessment ai:BiasAssessment or ai:BiasDetection
+#   (g) dpv:hasTechnicalMeasure, dpv:hasOrganisationalMeasure or
+#       dpv:hasAssessment ai:BiasMitigation or ai:BiasPrevention
+#   (h) recitals:hasDataGapAnalysis
+# Art. 10(3): recitals:hasStatisticalProperties
+# Art. 10(5): dpv:hasPersonalData, dpv:hasTechnicalMeasure,
+#   dpv:hasStorageCondition, dpv:hasJustification
+#
+# DPV has no terms for (a), (d), (h) and Art. 10(3), so they
+# stay in the recitals: namespace.
 #################################################
 
-ex:BaseROPAShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:ROPA ;
-    dct:identifier "G_Base-1"^^xsd:string;
-
-    sh:or (        
-        [
-            sh:property [
-                sh:path dpv:hasDataController ;
-                sh:minCount 1 ;
-                sh:class dpv:DataController ;
-            ]
-        ]
-        [
-            sh:property [
-                sh:path dpv:hasDataProcessor ;
-                sh:minCount 1 ;
-                sh:class dpv:DataProcessor ;
-            ]
-        ]
-        [
-            sh:property [
-                sh:path dpv:hasDataProcessor ;
-                sh:minCount 1 ;
-                sh:class dpv:DataSubProcessor ;
-            ]
-        ]
-    ) ;
-
-    sh:message "ROPA must identify at least a Data Controller or a Data Processor." .
-
-
-#################################################
-# Processing Activity Shape
-#################################################
-
-ex:ProcessingShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:Process ;
-
-    sh:node [
-        sh:and (
-            ex:LegalBasisRequirement
-            ex:PurposeRequirement
-            ex:DataSubjectRequirement
-            ex:PersonalDataRequirement
-            ex:RecipientRequirement
-            ex:StorageRequirement
-            ex:TechnicalMeasureRequirement
-            ex:OrganisationalMeasureRequirement
-        ) ;
-        sh:message "ROPA is incomplete. One or more mandatory GDPR Art.30 fields are missing." ;
-    ] ;
-
-
-    # Joint Controller
-    sh:property [
-        sh:path dpv:hasJointDataController ;
-        dct:identifier "A30-1-11"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:JointDataController ;
-        sh:message "Another organisation not identified as joint controllers." ;
-    ] ;
-
-    # Purpose
-    sh:property [
-        sh:path dpv:hasPurpose ;
-        dct:identifier "A30-1-14"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Purpose ;
-        sh:message "activity does not contain purpose of processing." ;
-    ] ;
-
-    # Data Subjects
-    sh:property [
-        sh:path dpv:hasDataSubject ;
-        dct:identifier "A30-1-15"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataSubject ;
-        sh:message "activity does not contain categories of data subjects." ;
-    ] ;
-
-    # Personal Data Categories
-    sh:property [
-        sh:path dpv:hasPersonalData ;
-        dct:identifier "A30-1-16"^^xsd:string;
-        sh:minCount 1 ;
-        #sh:class dpv:PersonalData ;
-        sh:message "activity does not contain categories of personal data." ;
-    ] ;
-
-
-
-    # Transfer validation
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-18"^^xsd:string;
-        dct:identifier "A30-1-43"^^xsd:string;
-        sh:minCount 0 ;
-        sh:node dpv:OrganisationalMeasure ;
-        sh:message "organisational measures not contained." ;
-    ] ;
-
-    # Storage
-    sh:property [
-        sh:path dpv:hasStorageCondition ;
-        dct:identifier "A30-1-24"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:StorageDuration ;
-        sh:message "duration of storage of personal data after which it will be erased if not furtehr needed not contained." ;
-    ] ;
-
-    # Technical Measures
-    sh:property [
-        sh:path dpv:hasTechnicalMeasure ;
-        dct:identifier "A30-1-25"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:TechnicalMeasure ;
-        sh:message "technical measures not contained." ;
-    ] ;
-
-    # Organisational Measures
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-26"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:OrganisationalMeasure ;
-        sh:message "organisational measures not contained." ;
-    ] ;
-
-    .
-
-#################################################
-# Transfer Shape
-#################################################
-
-ex:TransferShape
-    a sh:NodeShape ;
-    dct:identifier "A30-1-18"^^xsd:string;
-    sh:targetClass dpv:Transfer ;
-
-    # Recipients
-    sh:property [
-        sh:path dpv:hasDataImporter ;
-        dct:identifier "A30-1-17"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Recipient ;
-        sh:message "Activity does not contain categories of recipients." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasLegalBasis ;
-        sh:minCount 1 ;
-        sh:message "Transfer must specify a legal basis." ;
+ex:
+    sh:declare [
+        sh:prefix "dpv" ;
+        sh:namespace "https://w3id.org/dpv#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "ai" ;
+        sh:namespace "https://w3id.org/dpv/ai#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "eu-aiact" ;
+        sh:namespace "https://w3id.org/dpv/legal/eu/aiact#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "tech" ;
+        sh:namespace "https://w3id.org/dpv/tech#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
     ] .
 
 #################################################
-# Recipient Shape
+# Scope: there must be a high-risk AI system
 #################################################
 
-ex:RecipientShape
+ex:AIActArt10ScopeShape
     a sh:NodeShape ;
-    sh:targetClass dpv:Recipient ;
+    sh:targetNode recitals:AIActArticle10Scope ;
 
-    #############################################
-    # 1. Missing Location
-    #############################################
+    # EU AI Act Art. 10 scope: fails when the data has nothing this article applies to
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Location of recipient not identified." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-19"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-0"^^xsd:string ;
+        sh:message "No high-risk AI system (eu-aiact:HighRiskAISystem) found; Art. 10 cannot be assessed." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { ?s rdf:type eu-aiact:HighRiskAISystem . }
+            }
+        """ ;
+    ] .
+
+#################################################
+# High-risk AI system
+#################################################
+
+ex:AIActArt10SystemShape
+    a sh:NodeShape ;
+    sh:targetClass eu-aiact:HighRiskAISystem ;
+
+    # Art. 10(1) and 10(6): testing data sets are always required
+    sh:property [
+        sh:path ai:hasTestingData ;
+        dct:identifier "AIA10-1-3"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "High-risk AI system has no testing data (ai:hasTestingData) (Art. 10(1), 10(6))." ;
+    ] ;
+
+    # Art. 10(1): systems with a trained model need training and validation data
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-1-1"^^xsd:string ;
+        sh:message "High-risk AI system uses a trained model but has no training data (ai:hasTrainingData) (Art. 10(1))." ;
+        sh:select """
+            SELECT $this WHERE {
+                $this ai:hasModel ?model .
+                ?model rdf:type?/rdfs:subClassOf* ai:TrainedModel .
+                FILTER NOT EXISTS { $this ai:hasTrainingData ?ds . }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(1): trained model but no validation data
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-1-2"^^xsd:string ;
+        sh:message "High-risk AI system uses a trained model but has no validation data (ai:hasValidationData) (Art. 10(1))." ;
+        sh:select """
+            SELECT $this WHERE {
+                $this ai:hasModel ?model .
+                ?model rdf:type?/rdfs:subClassOf* ai:TrainedModel .
+                FILTER NOT EXISTS { $this ai:hasValidationData ?ds . }
+            }
+        """ ;
+    ] .
+
+# Same targets, warning level: checks the law asks for "as appropriate" or "where appropriate"
+ex:AIActArt10SystemWarningShape
+    a sh:NodeShape ;
+    sh:targetClass eu-aiact:HighRiskAISystem ;
+    # Severity applies to every constraint of a shape, so the
+    # "as appropriate" checks live in their own shape.
+    sh:severity sh:Warning ;
+
+    # EU AI Act Art. 10(1): without the model it is unknown whether training and validation data are required
+    sh:property [
+        sh:path ai:hasModel ;
+        dct:identifier "AIA10-1-1"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "The system's model (ai:hasModel, typed ai:TrainedModel when trained) is not stated; training and validation data requirements could not be checked (Art. 10(1))." ;
+    ] ;
+
+    # Art. 10(4): data sets reflect the setting of intended use
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-4"^^xsd:string ;
+        sh:message "Geographical, contextual, behavioural or functional setting of intended use is not recorded (dpv:hasGeographicCoverage or tech:hasIntendedUse), so data set coverage of it cannot be checked (Art. 10(4))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { $this dpv:hasGeographicCoverage|tech:hasIntendedUse ?setting . }
+            }
+        """ ;
+    ] .
+
+#################################################
+# Training, validation and testing data
+#################################################
+
+ex:AIActArt10DatasetShape
+    a sh:NodeShape ;
+    sh:targetClass ai:TrainingData , ai:ValidationData , ai:TestingData ,
+        eu-aiact:TrainingData , eu-aiact:ValidationData , eu-aiact:TestingData ;
+    sh:targetObjectsOf ai:hasTrainingData , ai:hasValidationData , ai:hasTestingData ;
+
+    # EU AI Act Art. 10(2)(a): data set does not document the relevant design choices
+    sh:property [
+        sh:path recitals:hasDesignChoice ;
+        dct:identifier "AIA10-2-a"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Data set does not document the relevant design choices (Art. 10(2)(a))." ;
+    ] ;
+
+    # EU AI Act Art. 10(2)(b): data collection processes
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-2-b"^^xsd:string ;
+        sh:message "Data set does not document its data collection process (dpv:hasProcessing ai:DataCollection) (Art. 10(2)(b))." ;
+        sh:select """
+            SELECT $this WHERE {
                 FILTER NOT EXISTS {
-                    $this dpv:hasLocation ?loc .
+                    $this dpv:hasProcessing ?p .
+                    ?p rdf:type?/rdfs:subClassOf* ai:DataCollection .
                 }
             }
         """ ;
     ] ;
 
-    #############################################
-    # 2. Third Country Warning
-    #############################################
+    # EU AI Act Art. 10(2)(b): origin of the data
+    sh:property [
+        sh:path dpv:hasDataSource ;
+        dct:identifier "AIA10-2-b"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Data set does not document the origin of the data (dpv:hasDataSource) (Art. 10(2)(b))." ;
+    ] ;
+
+    # EU AI Act Art. 10(2)(b): original purpose of collecting personal data
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Location of recipient is a third country." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-20"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-2-b"^^xsd:string ;
+        sh:message "Data set contains personal data but the original purpose of its collection (dpv:hasPurpose) is not documented (Art. 10(2)(b))." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
-
-                # Case 1: explicit third country relation
-                {
-                    $this dpv:hasThirdCountry ?tc .
-                }
-
-                UNION
-
-                # Case 2: location typed as ThirdCountry
-                {
-                    $this dpv:hasLocation ?loc .
-                    ?loc rdf:type dpv:ThirdCountry .
-                }
-            } LIMIT 1
+            SELECT $this WHERE {
+                $this dpv:hasPersonalData ?pd .
+                FILTER NOT EXISTS { $this dpv:hasPurpose ?purpose . }
+            }
         """ ;
     ] ;
 
-    #############################################
-    # 3. International Organisation Warning
-    #############################################
+    # EU AI Act Art. 10(2)(c): data preparation operations
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Recipient is an international organisation." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-22"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-2-c"^^xsd:string ;
+        sh:message "Data set does not document data preparation operations such as annotation, labelling, cleaning, updating, enrichment or aggregation (dpv:hasProcessing ai:DataPreparation) (Art. 10(2)(c))." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
-                $this rdf:type dpv:InternationalOrganisation .
-            } LIMIT 1
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasProcessing ?p .
+                    ?p rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (ai:DataPreparation, ai:DataAnnotation, ai:DataLabelling, ai:DataCleaning,
+                                   ai:DataUpdating, ai:DataEnrichment, ai:DataAggregation))
+                }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(2)(d): data set does not formulate the assumptions about what the data is supposed to measure and represent
+    sh:property [
+        sh:path recitals:hasAssumption ;
+        dct:identifier "AIA10-2-d"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Data set does not formulate the assumptions about what the data is supposed to measure and represent (Art. 10(2)(d))." ;
+    ] ;
+
+    # EU AI Act Art. 10(2)(e): availability, quantity and suitability
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-2-e"^^xsd:string ;
+        sh:message "Data set has no assessment of the availability, quantity and suitability of the data (dpv:hasAssessment dpv:DataSuitabilityAssessment) (Art. 10(2)(e))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasAssessment ?a .
+                    ?a rdf:type?/rdfs:subClassOf* dpv:DataSuitabilityAssessment .
+                }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(2)(f): examination for possible biases
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-2-f"^^xsd:string ;
+        sh:message "Data set has not been examined for possible biases (dpv:hasAssessment ai:BiasAssessment) (Art. 10(2)(f))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasAssessment ?a .
+                    ?a rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (ai:BiasAssessment, ai:BiasDetection))
+                }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(2)(g): measures to detect, prevent and mitigate biases
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-2-g"^^xsd:string ;
+        sh:message "Data set has no measures to detect, prevent and mitigate the biases identified (ai:BiasMitigation or ai:BiasPrevention) (Art. 10(2)(g))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasAssessment ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (ai:BiasMitigation, ai:BiasPrevention))
+                }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(2)(h): data set does not identify data gaps or shortcomings and how they are addressed
+    sh:property [
+        sh:path recitals:hasDataGapAnalysis ;
+        dct:identifier "AIA10-2-h"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Data set does not identify data gaps or shortcomings and how they are addressed (Art. 10(2)(h))." ;
+    ] ;
+
+    # Art. 10(3): relevant, representative, error-free, complete; statistical properties
+    sh:property [
+        sh:path recitals:hasStatisticalProperties ;
+        dct:identifier "AIA10-3"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Data set does not document its statistical properties, needed to show it is relevant and sufficiently representative (Art. 10(3))." ;
+    ] ;
+
+    # Art. 10(5): special category data processed for bias detection
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-5-b"^^xsd:string ;
+        sh:message "Data set contains special category personal data without pseudonymisation or another privacy-preserving technical measure (Art. 10(5)(b))." ;
+        sh:select """
+            SELECT $this WHERE {
+                $this dpv:hasPersonalData ?pd .
+                ?pd rdf:type?/rdfs:subClassOf* dpv:SpecialCategoryPersonalData .
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:Pseudonymisation, dpv:Anonymisation, dpv:PrivacyPreservingProtocol))
+                }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(5)(c): data set contains special category personal data without access controls limiting it to authorised persons
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-5-c"^^xsd:string ;
+        sh:message "Data set contains special category personal data without access controls limiting it to authorised persons (Art. 10(5)(c))." ;
+        sh:select """
+            SELECT $this WHERE {
+                $this dpv:hasPersonalData ?pd .
+                ?pd rdf:type?/rdfs:subClassOf* dpv:SpecialCategoryPersonalData .
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* dpv:AccessControlMethod .
+                }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(5)(e): data set contains special category personal data with no deletion condition (once bias is corrected or retention ends)
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-5-e"^^xsd:string ;
+        sh:message "Data set contains special category personal data with no deletion condition (once bias is corrected or retention ends) (Art. 10(5)(e))." ;
+        sh:select """
+            SELECT $this WHERE {
+                $this dpv:hasPersonalData ?pd .
+                ?pd rdf:type?/rdfs:subClassOf* dpv:SpecialCategoryPersonalData .
+                FILTER NOT EXISTS { $this dpv:hasStorageCondition ?s . }
+            }
+        """ ;
+    ] ;
+
+    # EU AI Act Art. 10(5)(f): why special category data was strictly necessary
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA10-5-f"^^xsd:string ;
+        sh:message "Data set contains special category personal data but the reasons it was strictly necessary for bias detection (dpv:hasJustification) are not recorded (Art. 10(5)(f))." ;
+        sh:select """
+            SELECT $this WHERE {
+                $this dpv:hasPersonalData ?pd .
+                ?pd rdf:type?/rdfs:subClassOf* dpv:SpecialCategoryPersonalData .
+                FILTER NOT EXISTS { $this dpv:hasJustification ?j . }
+            }
         """ ;
     ] .
-
-# ex:RecipientShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:Recipient ;
-
-#     # Optional warning: if recipient does NOT have a location
-#     sh:property [
-#         sh:path dpv:hasLocation ;
-#         dct:identifier "A30-1-19"^^xsd:string;
-#         dct:identifier "A30-1-44"^^xsd:string;
-#         sh:minCount 1 ;               # optional, not mandatory
-#         sh:severity sh:Warning ;      # warning
-#         sh:message "Location of recipient not identified." ;
-#     ] ;
-
-#     # Optional warning: Location of recipient is not third country
-#     sh:property [
-#         sh:path dpv:hasLocation ;
-#         sh:hasValue dpv:ThirdCountry ;
-#         dct:identifier "A30-1-20"^^xsd:string;
-#         dct:identifier "A30-1-45"^^xsd:string;
-#         sh:minCount 1 ;               # optional
-#         sh:in ( dpv:ThirdCountry ) ;   # third country allowed
-#         sh:severity sh:Warning ;
-#         sh:message "Location of recipient is a third country." ;
-#     ] ;
-    
-#     # Optional warning: if recipient is not InternationalOrganisation
-#     sh:property [
-#         sh:path rdf:type ;
-#         sh:hasValue dpv:InternationalOrganisation ;
-#         dct:identifier "A30-1-22"^^xsd:string;
-#         dct:identifier "A30-1-46"^^xsd:string;
-#         sh:minCount 1 ;               # optional
-#         sh:severity sh:Warning ;      # warning, not violation
-#         sh:message "Location of recipient is international organisation." ;
-#     ] 
-#     .
-
-  # Optional warning: Location of recipient is not third country
-    # sh:sparql [
-    #     a sh:SPARQLConstraint ;
-    #     sh:message "Recipient is located in a third country." ;
-    #     sh:severity sh:Warning ;
-    #     sh:select """
-    #         SELECT $this WHERE {
-    #             $this dpv:hasLocation ?loc .
-    #             ?loc rdf:type dpv:ThirdCountry .
-    #         }
-    #     """ ;
-    # ] ;
-
-    # sh:sparql [
-    #     a sh:SPARQLConstraint ;
-    #     sh:message "Recipient is an international organisation." ;
-    #     sh:severity sh:Warning ;
-    #     sh:select """
-    #         SELECT DISTINCT $this WHERE {
-    #             $this rdf:type dpv:InternationalOrganisation .
-    #         }
-    #     """ ;
-    # ] ;.
-
-#################################################
-# Controller ROPA Shape
-#################################################
-
-# ex:ControllerROPAShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:ROPA ;
-
-#     sh:property [
-#         sh:path dpv:hasDataController ;
-#         sh:minCount 1 ;
-#         sh:class dpv:DataController ;
-#         sh:message "ROPA must identify a Data Controller." ;
-#     ] ;
-
-# .
-
-ex:ControllerROPAShape
-    a sh:NodeShape ;
-    sh:targetSubjectsOf dpv:hasDataController ;
-
-    sh:property [
-        sh:path dpv:hasProcess ;
-        #dct:identifier "A30-1-22"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Process ;
-        sh:message "Controller ROPA must reference at least one processing activity." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasRepresentative ;
-        dct:identifier "A30-1-5"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Representative ;
-        sh:message "Controller ROPA must include the Controller's Representative." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasDataProtectionOfficer ;
-        dct:identifier "A30-1-8"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataProtectionOfficer ;
-        sh:message "Controller ROPA must include a Data Protection Officer where required." ;
-    ] ;
-
-.
-
-#################################################
-# Controller Shape
-#################################################
-
-ex:ControllerShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataController ;
-
-    sh:property [
-        sh:path dpv:hasRecordOfActivity ;
-        dct:identifier "A30-1-1"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:ROPA ;
-        sh:message "Controller does not have a ROPA." ] ; 
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-3"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-4"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA does not contain contact details of controller." ;
-    ] ;
-
-
-.
-
-#################################################
-# Processor Shape
-#################################################
-
-ex:ProcessorShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataProcessor ;
-
-    sh:property [
-        sh:path dpv:hasRecordOfActivity ;
-        dct:identifier "A30-1-27"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:ROPA ;
-        sh:message "Data Processor does not have a ROPA." ] ;
-        
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-29"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." 
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-30"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA does not contain contact details of controller." 
-    ] ;
-.
-
-
-#################################################
-# Processor ROPA Shape
-#################################################
-
-# ex:ProcessorROPAShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:DataProcessingRecord ;
-
-#     sh:property [
-#         sh:path dpv:hasDataProcessor ;
-#         sh:minCount 1 ;
-#         sh:class dpv:DataProcessor ;
-#         sh:message "Processor ROPA must identify a Data Processor." ;
-#     ] ;
-
-ex:ProcessorROPAShape
-    a sh:NodeShape ;
-    sh:targetSubjectsOf dpv:hasDataProcessor ;
-
-    sh:property [
-        sh:path dpv:hasProcess ;
-        sh:minCount 1 ;
-        sh:class dpv:Process ;
-        sh:message "Processor ROPA must reference at least one processing activity." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasRepresentative ;
-        dct:identifier "A30-1-31"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Representative ;
-        sh:message "Processor ROPA must include its Representative." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasDataProtectionOfficer ;
-        dct:identifier "A30-1-34"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataProtectionOfficer ;
-        sh:message "Processor ROPA must include a Data Protection Officer where required." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasTechnicalMeasure ;
-        dct:identifier "A30-1-50"^^xsd:string;
-        sh:minCount 1 ;
-        sh:message "Processor ROPA must include technical security measures." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-51"^^xsd:string;
-        sh:minCount 1 ;
-        sh:message "Processor ROPA must include organisational security measures." ;
-    ] .
-
-#################################################
-# Representative Shape
-#################################################
-
-ex:RepresentativeShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:Representative ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-6"^^xsd:string;
-        dct:identifier "A30-1-32"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of controller's representative." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-7"^^xsd:string;
-        dct:identifier "A30-1-33"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of controller's representative." ;
-    ] .
-
-
-
-
-#################################################
-# DPO Shape
-#################################################
-
-ex:DPOShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataProtectionOfficer ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-9"^^xsd:string;
-        dct:identifier "A30-1-35"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of data protection officer." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-10"^^xsd:string;
-        dct:identifier "A30-1-36"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of data protection officer." ;
-    ] .
-
-#################################################
-# Joint Controller Shape
-#################################################
-
-ex:JointControllerShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:JointDataController ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-12"^^xsd:string;
-        sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of joint controller." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-13"^^xsd:string;
-        sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of joint controller." ;
-    ] .
-
-#################################################
-# ROPA Exemption Rule (A30.5 logic)
-#################################################
-
-# ex:ROPAExemptionShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:DataController ;
-
-#     sh:property [
-#         sh:path ex:employeeCount ;
-#         sh:datatype xsd:integer ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:isLowRiskProcessing ;
-#         sh:datatype xsd:boolean ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:isOccasionalProcessing ;
-#         sh:datatype xsd:boolean ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:hasSpecialCategoryData ;
-#         sh:datatype xsd:boolean ;
-#     ] .
-

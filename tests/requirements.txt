@@ -1,0 +1,7 @@
+# Test dependencies: the services' pinned requirements plus the test tools.
+# Needs Python 3.10 or newer (pyshacl 0.40); see README "Tests".
+-r ../input-api/requirements.txt
+-r ../compliance-api/requirements.txt
+-r ../status-api/requirements.txt
+pytest==9.1.1
+httpx==0.28.1

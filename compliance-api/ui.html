@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RECITALS Compliance Checks</title>
+<style>
+  /* Colours as variables, with a dark-mode set below */
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6b66;
+    --border: #e2e1dc; --accent: #2f5bd3;
+    --pass: #1f7a3d; --pass-bg: #e6f4ea;
+    --fail: #b3261e; --fail-bg: #fbe9e7;
+    --warn: #8a5a00; --warn-bg: #fff4d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615; --panel: #1f1f1d; --text: #ecebe6; --muted: #a3a29b;
+      --border: #34332f; --accent: #7d9cf0;
+      --pass: #7fd19b; --pass-bg: #173323;
+      --fail: #f2a29b; --fail-bg: #3b1d1a;
+      --warn: #f0c46a; --warn-bg: #3a2e12;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  p.lead { margin: 0 0 20px; color: var(--muted); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+           padding: 16px; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  select, input[type=text], input[type=file] { font: inherit; color: var(--text); background: var(--bg);
+           border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; min-width: 140px; }
+  button { font: inherit; border: 1px solid var(--accent); background: var(--accent); color: #fff;
+           border-radius: 6px; padding: 7px 14px; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  details summary { cursor: pointer; color: var(--accent); font-size: 14px; }
+  #message { min-height: 22px; margin-top: 10px; font-size: 14px; }
+  #message.error { color: var(--fail); }
+  .status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+  .status.passed { background: var(--pass-bg); color: var(--pass); }
+  .status.failed { background: var(--fail-bg); color: var(--fail); }
+  .status.warning { background: var(--warn-bg); color: var(--warn); }
+  .counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .count { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; min-width: 110px;
+           background: transparent; color: var(--text); text-align: left; }
+  .count b { display: block; font-size: 22px; }
+  .count.active { outline: 2px solid var(--accent); }
+  .count.passed b { color: var(--pass); } .count.failed b { color: var(--fail); } .count.warning b { color: var(--warn); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px; border-top: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 13px; }
+  td.mark { font-size: 18px; width: 32px; text-align: center; }
+  tr.passed td.mark { color: var(--pass); } tr.failed td.mark { color: var(--fail); } tr.warning td.mark { color: var(--warn); }
+  tr.failed { background: var(--fail-bg); } tr.warning { background: var(--warn-bg); }
+  td.id { white-space: nowrap; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  .rule { color: var(--muted); font-size: 13px; }
+  .finding { margin: 2px 0; }
+  .node { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); }
+  ul.history { list-style: none; margin: 0; padding: 0; }
+  ul.history li { display: flex; gap: 12px; align-items: center; padding: 6px 0; border-top: 1px solid var(--border);
+                   flex-wrap: wrap; font-size: 14px; }
+  ul.history li:first-child { border-top: 0; }
+  .muted { color: var(--muted); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>RECITALS compliance checks</h1>
+  <p class="lead">Run an article check on a use case and see every requirement: passed, failed or warning.</p>
+
+  <!-- Pick or create a use case, then a law and article -->
+  <section class="panel">
+    <h2>1. Use case</h2>
+    <div class="row">
+      <label>Use case <select id="useCase"></select></label>
+      <label>Law <select id="law"></select></label>
+      <label>Article <select id="article"></select></label>
+      <span id="addLawGroup" class="row" style="gap:8px">
+        <label>Add a law to this use case <select id="addLaw"></select></label>
+        <button class="secondary" id="addLawBtn">Add law</button>
+      </span>
+    </div>
+    <details style="margin-top:12px">
+      <summary>Create a use case</summary>
+      <div class="row" style="margin-top:10px">
+        <label>ID <input type="text" id="newId" placeholder="e.g. TALENTMATCH" maxlength="80"
+               pattern="[A-Za-z][A-Za-z0-9_\-]{0,79}"></label>
+        <label>Law <select id="newLaw"><option>GDPR</option><option>NIS2</option><option>EU_AI_ACT</option></select></label>
+        <label>Label <input type="text" id="newLabel" placeholder="e.g. CV screening model"></label>
+        <button class="secondary" id="createBtn">Create</button>
+      </div>
+      <p class="muted" style="margin:8px 0 0;font-size:13px">ID: start with a letter, then letters, numbers, <code>_</code> or <code>-</code> (up to 80 characters).</p>
+    </details>
+  </section>
+
+  <!-- Optional Turtle file uploaded before the check -->
+  <section class="panel">
+    <h2>2. Data (optional)</h2>
+    <div class="row">
+      <label>Turtle file to add to the use case <input type="file" id="file" accept=".ttl,text/turtle"></label>
+    </div>
+    <p class="muted" style="margin:8px 0 0;font-size:13px">Uploads add to the data already in the use case; everything in it is checked together.</p>
+  </section>
+
+  <!-- Run the check; messages appear below the button -->
+  <section class="panel">
+    <div class="row">
+      <button id="runBtn">Run check</button>
+    </div>
+    <div id="message"></div>
+  </section>
+
+  <!-- Result: status, counts and every requirement of the article -->
+  <section class="panel" id="resultPanel" hidden>
+    <h2 id="resultTitle"></h2>
+    <div id="resultMeta" class="muted" style="font-size:13px"></div>
+    <div class="counts" id="counts"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Requirement</th><th>Obligation</th><th>Result</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- History of the selected use case -->
+  <section class="panel">
+    <h2>Past assessments of this use case</h2>
+    <ul class="history" id="history"><li class="muted">None yet.</li></ul>
+  </section>
+</main>
+
+<script>
+// Filled in by GET /ui from INPUT_API_PUBLIC_URL.
+const INPUT_API = "__INPUT_API_URL__";
+const $ = (id) => document.getElementById(id);
+let useCases = [];
+let current = null;
+let filter = "all";
+
+// Show a status or error message under the Run check button.
+function say(text, isError) {
+  $("message").textContent = text || "";
+  $("message").className = isError ? "error" : "";
+}
+
+// fetch() wrapper: parse JSON and turn an error response into an Error with its detail.
+async function call(url, options) {
+  const response = await fetch(url, options);
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail || body);
+    throw new Error(`${response.status}: ${detail}`);
+  }
+  return body;
+}
+
+// Build multipart form data from an object (the APIs take form fields).
+function form(fields) {
+  const data = new FormData();
+  for (const [key, value] of Object.entries(fields)) data.append(key, value);
+  return data;
+}
+
+// Last part of a URI, for showing resources briefly.
+function localName(uri) {
+  if (!uri) return "";
+  return String(uri).split(" | ").map((u) => u.split(/[/#]/).pop()).join(" | ");
+}
+
+// Create an <option> element.
+function option(value, text) {
+  const el = document.createElement("option");
+  el.value = value;
+  el.textContent = text || value;
+  return el;
+}
+
+// Fill the use case dropdown from GET /use-cases, optionally selecting one.
+async function loadUseCases(select) {
+  useCases = await call("use-cases");
+  $("useCase").replaceChildren(...useCases.map((u) => option(u.use_case_id, `${u.use_case_id} – ${u.label || ""}`)));
+  if (!useCases.length) $("useCase").append(option("", "No use cases yet: create one below"));
+  if (select) $("useCase").value = select;
+  await onUseCase();
+}
+
+// Laws offered by the "Add a law" dropdown.
+const ALL_LAWS = ["GDPR", "NIS2", "EU_AI_ACT"];
+
+// Selected use case changed: show its laws and the laws that can still be added.
+async function onUseCase() {
+  const useCase = useCases.find((u) => u.use_case_id === $("useCase").value);
+  const laws = useCase ? useCase.applicable_laws : [];
+  $("law").replaceChildren(...laws.map((l) => option(l)));
+  const missing = ALL_LAWS.filter((l) => !laws.includes(l));
+  $("addLaw").replaceChildren(...missing.map((l) => option(l)));
+  $("addLawGroup").hidden = !useCase || !missing.length;
+  await onLaw();
+  await loadHistory();
+}
+
+// Selected law changed: show the articles that can be checked for it.
+async function onLaw() {
+  const law = $("law").value;
+  if (!law) { $("article").replaceChildren(); return; }
+  const result = await call(`laws/${encodeURIComponent(law)}/articles`);
+  $("article").replaceChildren(...result.articles.map((a) => option(a, `Article ${a}`)));
+}
+
+// Create a use case through the Input API, then select it.
+async function createUseCase() {
+  const id = $("newId").value.trim();
+  if (!/^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(id)) {
+    say("Use case ID must start with a letter and contain only letters, numbers, _ or - (up to 80 characters).", true);
+    return;
+  }
+  say("Creating use case…");
+  try {
+    const body = await call(`${INPUT_API}/use-cases`, {
+      method: "POST",
+      body: form({ use_case_id: id, law: $("newLaw").value, label: $("newLabel").value || id }),
+    });
+    say(body.message);
+    $("newId").value = "";
+    await loadUseCases(id);
+  } catch (error) {
+    say(`Could not create the use case (${error.message}).`, true);
+  }
+}
+
+// Add a law to the selected use case through the Input API.
+async function addLaw() {
+  const id = $("useCase").value, law = $("addLaw").value;
+  if (!id || !law) return;
+  say(`Adding ${law} to ${id}…`);
+  try {
+    await call(`${INPUT_API}/use-cases/${encodeURIComponent(id)}/laws`, { method: "PATCH", body: form({ law }) });
+    await loadUseCases(id);
+    $("law").value = law;
+    await onLaw();
+    say(`${law} added to ${id}.`);
+  } catch (error) {
+    say(`Could not add the law (${error.message}).`, true);
+  }
+}
+
+// Upload the chosen file (if any), run POST /check and show the result.
+async function runCheck() {
+  const useCase = $("useCase").value, law = $("law").value, article = $("article").value;
+  if (!useCase || !law || !article) { say("Pick a use case, law and article first.", true); return; }
+  $("runBtn").disabled = true;
+  try {
+    const file = $("file").files[0];
+    if (file) {
+      say(`Uploading ${file.name}…`);
+      await call(`${INPUT_API}/input`, { method: "POST", body: form({ use_case_id: useCase, file }) });
+      $("file").value = "";
+    }
+    say("Running check…");
+    const result = await call("check", { method: "POST", body: form({ use_case: useCase, law, article }) });
+    show({
+      title: `${law} Article ${article} – ${useCase}`,
+      status: result.status, timestamp: result.timestamp, id: result.assessment_id,
+      summary: result.summary, requirements: result.requirements,
+    });
+    say(file ? `Uploaded ${file.name} and ran the check.` : "Check finished.");
+    await loadHistory();
+  } catch (error) {
+    say(error.message, true);
+  } finally {
+    $("runBtn").disabled = false;
+  }
+}
+
+// List the past assessments of the selected use case, newest first.
+async function loadHistory() {
+  const useCase = $("useCase").value;
+  const list = $("history");
+  if (!useCase) { list.innerHTML = '<li class="muted">None yet.</li>'; return; }
+  let items = [];
+  try { items = await call(`use-cases/${encodeURIComponent(useCase)}/assessments`); } catch (e) { items = []; }
+  items.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+  if (!items.length) { list.innerHTML = '<li class="muted">None yet.</li>'; return; }
+  list.replaceChildren(...items.map((item) => {
+    const li = document.createElement("li");
+    const status = document.createElement("span");
+    status.className = `status ${item.status}`;
+    status.textContent = item.status;
+    const what = document.createElement("span");
+    what.textContent = `${item.law} Article ${item.article}`;
+    const when = document.createElement("span");
+    when.className = "muted";
+    when.textContent = new Date(item.timestamp).toLocaleString();
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = "View";
+    link.onclick = (event) => { event.preventDefault(); openAssessment(item.assessment_id); };
+    li.append(status, what, when, link);
+    return li;
+  }));
+}
+
+// Show a stored assessment from its report.
+async function openAssessment(id) {
+  try {
+    const report = await call(`assessments/${encodeURIComponent(id)}/report`);
+    const s = report.requirement_summary;
+    show({
+      title: `${report.requirement.law} Article ${report.requirement.article} – ${report.use_case.id}`,
+      status: report.assessment.status, timestamp: report.assessment.timestamp, id,
+      summary: s, requirements: report.requirements,
+    });
+    say("");
+    $("resultPanel").scrollIntoView({ behavior: "smooth" });
+  } catch (error) {
+    say(error.message, true);
+  }
+}
+
+// Display a check result: title, status, counts and requirement table.
+function show(result) {
+  current = result;
+  filter = "all";
+  $("resultPanel").hidden = false;
+  $("resultTitle").innerHTML = "";
+  const status = document.createElement("span");
+  status.className = `status ${result.status}`;
+  status.textContent = result.status === "passed" ? "PASSED" : "FAILED";
+  $("resultTitle").append(`${result.title} `, status);
+  $("resultMeta").textContent = `Assessment ${result.id} · ${new Date(result.timestamp).toLocaleString()}`;
+  render();
+}
+
+// Draw the counts and the requirement rows for the current filter.
+function render() {
+  const s = current.summary || { total: 0, passed: 0, failed: 0, warnings: 0 };
+  const tiles = [
+    ["all", "Requirements", s.total], ["passed", "Passed ✓", s.passed],
+    ["failed", "Failed ✗", s.failed], ["warning", "Warnings ⚠", s.warnings],
+  ];
+  $("counts").replaceChildren(...tiles.map(([key, label, n]) => {
+    const tile = document.createElement("button");
+    tile.className = `count ${key}${filter === key ? " active" : ""}`;
+    tile.innerHTML = `<b>${n}</b>${label}`;
+    tile.onclick = () => { filter = key; render(); };
+    return tile;
+  }));
+  const marks = { passed: "✓", failed: "✗", warning: "⚠" };
+  const rows = current.requirements.filter((r) => filter === "all" || r.status === filter);
+  $("rows").replaceChildren(...rows.map((r) => {
+    const tr = document.createElement("tr");
+    tr.className = r.status;
+    const mark = document.createElement("td");
+    mark.className = "mark";
+    mark.textContent = marks[r.status];
+    mark.title = r.status;
+    const id = document.createElement("td");
+    id.className = "id";
+    id.textContent = r.id;
+    const severity = document.createElement("td");
+    severity.textContent = r.obligation;
+    const detail = document.createElement("td");
+    if (r.status === "passed") {
+      const met = document.createElement("div");
+      met.textContent = "Met";
+      const rule = document.createElement("div");
+      rule.className = "rule";
+      rule.textContent = `Fails when: ${r.message}`;
+      detail.append(met, rule);
+    } else {
+      for (const f of r.findings) {
+        const line = document.createElement("div");
+        line.className = "finding";
+        line.textContent = f.message;
+        const node = document.createElement("div");
+        node.className = "node";
+        node.textContent = `on ${localName(f.focus_node)}${f.property ? ` · ${localName(f.property)}` : ""}`;
+        detail.append(line, node);
+      }
+    }
+    tr.append(mark, id, severity, detail);
+    return tr;
+  }));
+  if (!current.requirements.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 4;
+    td.className = "rule";
+    td.textContent = "No requirement details for this assessment. Its article is no longer assessed, so only the findings it recorded can be shown, and it recorded none.";
+    tr.append(td);
+    $("rows").replaceChildren(tr);
+  }
+}
+
+// Wire up the controls and load the use cases.
+$("useCase").onchange = onUseCase;
+$("law").onchange = onLaw;
+$("createBtn").onclick = createUseCase;
+$("addLawBtn").onclick = addLaw;
+$("runBtn").onclick = runCheck;
+loadUseCases().catch((error) => say(`Could not load use cases (${error.message}).`, true));
+</script>
+</body>
+</html>

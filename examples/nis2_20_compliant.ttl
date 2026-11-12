@@ -1,0 +1,41 @@
+# NIS2 Art. 20 - Governance (COMPLIANT)
+# Harbourview Software Ltd runs a cloud HR and payroll platform holding
+# its customers' employee records: an essential entity (cloud computing
+# service provider, Annex I, digital infrastructure).
+# Expected result: passed, no findings.
+
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix risk: <https://w3id.org/dpv/risk#> .
+@prefix ex: <http://example.com/> .
+@prefix recitals: <http://example.org/recitals/> .
+
+ex:Harbourview
+    a recitals:EssentialEntity ;
+    dpv:hasName "Harbourview Software Ltd" ;
+    recitals:hasManagementBody ex:HarbourviewBoard ;                 # Art. 20(1)
+    dpv:hasOrganisationalMeasure
+        ex:CyberRiskPolicy ,
+        ex:IncidentHandlingProcedure ,
+        ex:StaffSecurityAwareness .                                  # Art. 20(2)
+
+ex:HarbourviewBoard
+    a recitals:ManagementBody ;
+    dpv:hasName "Board of Directors" ;
+    dpv:hasOrganisationalMeasure ex:BoardCyberTraining .             # Art. 20(2)
+
+ex:CyberRiskPolicy
+    a risk:RiskManagement ;
+    dpv:hasName "Cybersecurity risk-management policy for the HR platform (Art. 21 measures)" ;
+    recitals:approvedBy ex:HarbourviewBoard ;                        # Art. 20(1) approve
+    recitals:implementationOverseenBy ex:HarbourviewBoard .          # Art. 20(1) oversee
+
+ex:IncidentHandlingProcedure
+    a dpv:RiskMitigationMeasure , dpv:IncidentManagementProcedures ;
+    dpv:hasName "Incident handling and NIS2 reporting procedure, including breaches of employee data" ;
+    recitals:approvedBy ex:HarbourviewBoard ;
+    recitals:implementationOverseenBy ex:HarbourviewBoard .
+
+ex:BoardCyberTraining a dpv:CybersecurityTraining ;
+    dpv:hasName "Annual cyber-risk training for board members" .
+ex:StaffSecurityAwareness a dpv:CybersecurityTraining ;
+    dpv:hasName "Quarterly phishing and security awareness training for all employees" .

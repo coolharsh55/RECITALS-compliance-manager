@@ -1,0 +1,453 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix ex: <http://example.com/> .
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix risk: <https://w3id.org/dpv/risk#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix recitals: <http://example.org/recitals/> .
+
+#################################################
+# NIS2 Article 21 - Cybersecurity risk-management measures
+#
+# Applies to essential and important entities, typed
+# recitals:EssentialEntity or recitals:ImportantEntity.
+#
+# A measure counts when the entity links it with
+# dpv:hasTechnicalMeasure, dpv:hasOrganisationalMeasure or
+# dpv:hasPolicy and it is the listed concept itself, an
+# instance of it, or of a subclass declared in the data.
+# DPV terms are checked against DPV 2.3 (and its risk
+# extension for risk:RiskManagement).
+#
+# Art. 21(2) measures "shall include at least" (a)-(i): Violation.
+# "Where appropriate" parts - encryption in (h) and all of (j) -
+# and the supplier checks of Art. 21(3): Warning.
+#
+# Not checkable from the data: Art. 21(1) (whether the measures
+# are appropriate and proportionate to the risk) and Art. 21(4)
+# (corrective measures once non-compliance is found).
+#
+# Concepts DPV lacks (recitals: namespace):
+#   recitals:BusinessContinuityPlan
+#   recitals:ContinuousAuthentication
+#   recitals:CrisisManagementPlan
+#   recitals:CryptographyPolicy
+#   recitals:CyberHygienePractices
+#   recitals:HumanResourcesSecurityPolicy
+#   recitals:RiskAnalysisPolicy
+#   recitals:SecureDevelopmentPolicy
+#   recitals:SecuredCommunications
+#   recitals:SecuredEmergencyCommunications
+#   recitals:SupplyChainSecurityPolicy
+#   recitals:VulnerabilityHandlingPolicy
+#   ?entity     recitals:usesICTSupply ?supply   (Art. 21(3))
+#   ?assessment recitals:assesses ?supply
+#   ?supply     recitals:subjectOfCoordinatedRiskAssessment ?cra
+#   ?assessment recitals:takesIntoAccount ?cra
+#################################################
+
+ex:
+    sh:declare [
+        sh:prefix "dpv" ;
+        sh:namespace "https://w3id.org/dpv#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "risk" ;
+        sh:namespace "https://w3id.org/dpv/risk#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "recitals" ;
+        sh:namespace "http://example.org/recitals/"^^xsd:anyURI ;
+    ] .
+
+#################################################
+# Scope: there must be an entity to assess
+#################################################
+
+ex:NIS2Art21ScopeShape
+    a sh:NodeShape ;
+    sh:targetNode recitals:NIS2Article21Scope ;
+
+    # NIS2 Art. 21 scope: fails when the data has nothing this article applies to
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-0"^^xsd:string ;
+        sh:message "No essential or important entity found; NIS2 Art. 21 cannot be assessed." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    ?e rdf:type ?t .
+                    FILTER (?t IN (recitals:EssentialEntity, recitals:ImportantEntity))
+                }
+            }
+        """ ;
+    ] .
+
+#################################################
+# Art. 21(2)(a)-(i): minimum measures
+#################################################
+
+ex:NIS2Art21EntityShape
+    a sh:NodeShape ;
+    sh:targetClass recitals:EssentialEntity , recitals:ImportantEntity ;
+
+    # NIS2 Art. 21(2)(a): no policy on risk analysis
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-a-1"^^xsd:string ;
+        sh:message "No policy on risk analysis (Art. 21(2)(a))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:RiskAssessment, risk:RiskManagement, recitals:RiskAnalysisPolicy))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(a): no information system security policy
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-a-2"^^xsd:string ;
+        sh:message "No information system security policy (Art. 21(2)(a))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:InformationSecurityPolicy))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(b): no incident handling procedure
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-b"^^xsd:string ;
+        sh:message "No incident handling procedure (Art. 21(2)(b))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:IncidentManagementProcedures, dpv:IncidentReportingCommunication))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(c): no business continuity measure such as backup management or disaster recovery
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-c-1"^^xsd:string ;
+        sh:message "No business continuity measure such as backup management or disaster recovery (Art. 21(2)(c))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:DataBackupProtocols, dpv:DisasterRecoveryProcedures, recitals:BusinessContinuityPlan))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(c): no crisis management
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-c-2"^^xsd:string ;
+        sh:message "No crisis management (Art. 21(2)(c))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (recitals:CrisisManagementPlan))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(d): no supply chain security measure covering direct suppliers and service providers
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-d"^^xsd:string ;
+        sh:message "No supply chain security measure covering direct suppliers and service providers (Art. 21(2)(d))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:ThirdPartySecurityProcedures, recitals:SupplyChainSecurityPolicy))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(e): no security measure for acquisition, development and maintenance of systems, including vulnerability handling and disclosure
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-e"^^xsd:string ;
+        sh:message "No security measure for acquisition, development and maintenance of systems, including vulnerability handling and disclosure (Art. 21(2)(e))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:VulnerabilityTestingMethods, recitals:SecureDevelopmentPolicy, recitals:VulnerabilityHandlingPolicy))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(f): no policy or procedure to assess the effectiveness of the cybersecurity risk-management measures
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-f"^^xsd:string ;
+        sh:message "No policy or procedure to assess the effectiveness of the cybersecurity risk-management measures (Art. 21(2)(f))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:EffectivenessDeterminationProcedures, dpv:ReviewProcedure, dpv:CybersecurityAssessment, dpv:Audit))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(g): no basic cyber hygiene practices
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-g-1"^^xsd:string ;
+        sh:message "No basic cyber hygiene practices (Art. 21(2)(g))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (recitals:CyberHygienePractices))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(g): no cybersecurity training
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-g-2"^^xsd:string ;
+        sh:message "No cybersecurity training (Art. 21(2)(g))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:CybersecurityTraining, dpv:SecurityKnowledgeTraining))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(h): no policy or procedure on the use of cryptography
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-h-1"^^xsd:string ;
+        sh:message "No policy or procedure on the use of cryptography (Art. 21(2)(h))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:CryptographicMethods, dpv:CryptographicKeyManagement, recitals:CryptographyPolicy))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(i): no human resources security measure
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-i-1"^^xsd:string ;
+        sh:message "No human resources security measure (Art. 21(2)(i))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:BackgroundChecks, dpv:NDA, recitals:HumanResourcesSecurityPolicy))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(i): no access control policy
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-i-2"^^xsd:string ;
+        sh:message "No access control policy (Art. 21(2)(i))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:AccessControlMethod))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(i): no asset management
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-i-3"^^xsd:string ;
+        sh:message "No asset management (Art. 21(2)(i))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:AssetManagementProcedures))
+                }
+            }
+        """ ;
+    ] .
+
+#################################################
+# "Where appropriate" measures and Art. 21(3)
+#################################################
+
+ex:NIS2Art21WarningShape
+    a sh:NodeShape ;
+    sh:targetClass recitals:EssentialEntity , recitals:ImportantEntity ;
+    # Severity applies to every constraint of a shape, so the
+    # "where appropriate" checks live in their own shape.
+    sh:severity sh:Warning ;
+
+    # NIS2 Art. 21(2)(h): no encryption, where appropriate
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-h-2"^^xsd:string ;
+        sh:message "No encryption, where appropriate (Art. 21(2)(h))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:Encryption))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(j): no multi-factor or continuous authentication, where appropriate
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-j-1"^^xsd:string ;
+        sh:message "No multi-factor or continuous authentication, where appropriate (Art. 21(2)(j))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:MultiFactorAuthentication, recitals:ContinuousAuthentication))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(j): no secured voice, video and text communications, where appropriate
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-j-2"^^xsd:string ;
+        sh:message "No secured voice, video and text communications, where appropriate (Art. 21(2)(j))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (recitals:SecuredCommunications))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(2)(j): no secured emergency communication system within the entity, where appropriate
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-2-j-3"^^xsd:string ;
+        sh:message "No secured emergency communication system within the entity, where appropriate (Art. 21(2)(j))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure|dpv:hasPolicy ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (recitals:SecuredEmergencyCommunications))
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(3): ICT supply relied on by the entity is not covered by a risk assessment of the supplier's vulnerabilities and practices
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-3-1"^^xsd:string ;
+        sh:message "ICT supply relied on by the entity is not covered by a risk assessment of the supplier's vulnerabilities and practices (Art. 21(3))." ;
+        sh:select """
+            SELECT $this ?value WHERE {
+                $this recitals:usesICTSupply ?value .
+                FILTER NOT EXISTS {
+                    $this dpv:hasOrganisationalMeasure|dpv:hasPolicy ?a .
+                    ?a rdf:type?/rdfs:subClassOf* dpv:RiskAssessment .
+                    ?a recitals:assesses ?value .
+                }
+            }
+        """ ;
+    ] ;
+
+    # NIS2 Art. 21(3): ICT supply is subject to a Union coordinated security risk assessment that the entity's risk assessments do not take into account
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "N21-3-2"^^xsd:string ;
+        sh:message "ICT supply is subject to a Union coordinated security risk assessment that the entity's risk assessments do not take into account (Art. 21(3))." ;
+        sh:select """
+            SELECT $this ?value WHERE {
+                $this recitals:usesICTSupply ?value .
+                ?value recitals:subjectOfCoordinatedRiskAssessment ?cra .
+                FILTER NOT EXISTS {
+                    $this dpv:hasOrganisationalMeasure|dpv:hasPolicy ?a .
+                    ?a rdf:type?/rdfs:subClassOf* dpv:RiskAssessment .
+                    ?a recitals:takesIntoAccount ?cra .
+                }
+            }
+        """ ;
+    ] .

@@ -1,0 +1,158 @@
+# GDPR Art. 30 - Records of processing activities (COMPLIANT)
+# Harbourview Software Ltd keeps records for its employee data: HR records
+# and payroll as controller (Art. 30(1)), and Pinecrest Pension
+# Administration keeps its own record as processor (Art. 30(2)).
+# The record lists a representative and joint controllers because the
+# current shapes require them for every record (A30-1-5, A30-1-11, A30-1-31).
+# Expected result: passed, no findings.
+
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix pd: <https://w3id.org/dpv/pd#> .
+@prefix ex: <http://example.com/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Controller and its record (Art. 30(1))
+
+ex:Harbourview
+    a dpv:DataController ;
+    dpv:hasName "Harbourview Software Ltd" ;                         # A30-1-3
+    dpv:hasContact "privacy@harbourview.example" ;                   # A30-1-4
+    dpv:hasRecordOfActivity ex:HarbourviewROPA .                     # A30-1-1
+
+ex:HarbourviewROPA
+    a dpv:ROPA ;
+    dpv:hasDataController ex:Harbourview ;                           # G_Base-1
+    dpv:hasDataProtectionOfficer ex:HarbourviewDPO ;                 # A30-1-8
+    dpv:hasRepresentative ex:HarbourviewRep ;                        # A30-1-5
+    dpv:hasProcess ex:EmployeeRecords , ex:Payroll .
+
+ex:HarbourviewDPO
+    a dpv:DataProtectionOfficer ;
+    dpv:hasName "Aoife Brennan" ;                                    # A30-1-9
+    dpv:hasContact "dpo@harbourview.example" .                       # A30-1-10
+
+ex:HarbourviewRep
+    a dpv:Representative ;
+    dpv:hasName "Liffey Compliance Services" ;                       # A30-1-6
+    dpv:hasContact "rep@liffeycompliance.example" .                  # A30-1-7
+
+ex:HarbourviewGroup
+    a dpv:JointDataControllers ;
+    dpv:hasName "Harbourview Software Ltd and Harbourview Group Services Ltd" ;   # A30-1-12
+    dpv:hasContact "hr-privacy@harbourview.example" .                # A30-1-13
+
+# Processing activities
+
+ex:EmployeeRecords
+    a dpv:Process ;
+    dpv:hasName "Employee records in the group HR system" ;
+    dpv:hasLegalBasis dpv:EmploymentContract ;
+    dpv:hasJointDataControllers ex:HarbourviewGroup ;                # A30-1-11
+    dpv:hasPurpose ex:ManageStaff ;                                  # A30-1-14
+    dpv:hasDataSubject ex:Employees ;                                # A30-1-15
+    dpv:hasPersonalData ex:EmployeeContact , ex:JobDetails , ex:SickLeaveRecords ;   # A30-1-16
+    dpv:hasStorageCondition ex:SixYearsAfterLeaving ;                # A30-1-24
+    dpv:hasTechnicalMeasure ex:HRSystemEncryption , ex:HRRoleBasedAccess ;   # A30-1-25
+    dpv:hasOrganisationalMeasure ex:HRStaffTraining .                # A30-1-26
+
+ex:Payroll
+    a dpv:Process ;
+    dpv:hasName "Monthly payroll, tax and pension contributions" ;
+    dpv:hasLegalBasis dpv:EmploymentContract ;
+    dpv:hasJointDataControllers ex:HarbourviewGroup ;
+    dpv:hasPurpose ex:PayStaff ;
+    dpv:hasDataSubject ex:Employees ;
+    dpv:hasPersonalData ex:EmployeeContact , ex:SalaryDetails , ex:BankDetails , ex:TaxDetails ;
+    dpv:hasStorageCondition ex:SixYearsAfterTaxYear ;
+    dpv:hasTechnicalMeasure ex:HRSystemEncryption , ex:HRRoleBasedAccess ;
+    dpv:hasOrganisationalMeasure ex:HRStaffTraining ;
+    dpv:hasProcessing ex:TaxReturns , ex:PensionContributions .     # A30-1-17, A30-1-18
+
+ex:ManageStaff a dpv:Purpose , dpv:PersonnelManagement ; dpv:hasName "Manage employment of staff" .
+ex:PayStaff a dpv:Purpose , dpv:PersonnelPayment ; dpv:hasName "Pay salaries and statutory deductions" .
+ex:Employees a dpv:DataSubject , dpv:Employee ; dpv:hasName "Current and former employees" .
+
+ex:EmployeeContact a dpv:PersonalData , pd:Name , pd:EmailAddress , pd:TelephoneNumber ;
+    dpv:hasName "Name, work email and phone number" .
+ex:JobDetails a dpv:PersonalData , pd:Job , pd:EmploymentHistory ;
+    dpv:hasName "Job title, start date and employment history" .
+ex:SickLeaveRecords a dpv:SpecialCategoryPersonalData , pd:HealthRecord ;
+    dpv:hasName "Sick leave certificates" .
+ex:SalaryDetails a dpv:PersonalData , pd:Salary ; dpv:hasName "Salary and allowances" .
+ex:BankDetails a dpv:PersonalData , pd:BankAccount ; dpv:hasName "Bank account for salary payments" .
+ex:TaxDetails a dpv:PersonalData , pd:Tax ; dpv:hasName "Tax credits and PPS number" .
+
+ex:SixYearsAfterLeaving a dpv:StorageDuration ;
+    dpv:hasDuration "P6Y"^^xsd:duration ;
+    dpv:hasName "Kept for six years after the employee leaves" .
+ex:SixYearsAfterTaxYear a dpv:StorageDuration ;
+    dpv:hasDuration "P6Y"^^xsd:duration ;
+    dpv:hasName "Kept for six years after the end of the tax year" .
+
+ex:HRSystemEncryption a dpv:TechnicalMeasure , dpv:Encryption ;
+    dpv:hasName "Encryption at rest and in transit" .
+ex:HRRoleBasedAccess a dpv:TechnicalMeasure , dpv:AccessControlMethod ;
+    dpv:hasName "HR and payroll data visible to HR and finance roles only" .
+ex:HRStaffTraining a dpv:OrganisationalMeasure , dpv:DataProtectionTraining ;
+    dpv:hasName "Yearly data protection training for HR and finance staff" .
+
+# Recipients, all in the EU (A30-1-19, A30-1-20, A30-1-22)
+
+ex:TaxReturns
+    a dpv:Transfer ;
+    dpv:hasDataExporter ex:Harbourview ;
+    dpv:hasDataImporter ex:RevenueCommissioners ;
+    dpv:hasLegalBasis dpv:LegalObligation .
+
+ex:PensionContributions
+    a dpv:Transfer ;
+    dpv:hasDataExporter ex:Harbourview ;
+    dpv:hasDataImporter ex:Pinecrest ;
+    dpv:hasLegalBasis dpv:ControllerProcessorAgreement .
+
+ex:RevenueCommissioners
+    a dpv:Recipient , dpv:GovernmentalOrganisation ;
+    dpv:hasName "Revenue Commissioners" ;
+    dpv:hasLocation ex:Ireland .
+
+ex:Ireland a dpv:Country ; dpv:hasName "Ireland" .
+
+# Processor and its record (Art. 30(2))
+
+ex:Pinecrest
+    a dpv:DataProcessor , dpv:Recipient ;
+    dpv:hasName "Pinecrest Pension Administration Ltd" ;            # A30-1-29
+    dpv:hasContact "privacy@pinecrest.example" ;                     # A30-1-30
+    dpv:hasLocation ex:Ireland ;
+    dpv:hasRecordOfActivity ex:PinecrestROPA .                       # A30-1-27
+
+ex:PinecrestROPA
+    a dpv:ROPA ;
+    dpv:hasDataProcessor ex:Pinecrest ;
+    dpv:hasDataProtectionOfficer ex:PinecrestDPO ;                   # A30-1-34
+    dpv:hasRepresentative ex:HarbourviewRep ;                        # A30-1-31
+    dpv:hasTechnicalMeasure ex:PensionPortalMFA ;                    # A30-1-50
+    dpv:hasOrganisationalMeasure ex:PinecrestConfidentiality ;       # A30-1-51
+    dpv:hasProcess ex:PensionAdministration .
+
+ex:PinecrestDPO
+    a dpv:DataProtectionOfficer ;
+    dpv:hasName "Ciaran Doyle" ;
+    dpv:hasContact "dpo@pinecrest.example" .
+
+ex:PensionAdministration
+    a dpv:Process ;
+    dpv:hasName "Pension contributions administered for Harbourview" ;
+    dpv:hasLegalBasis dpv:ControllerProcessorAgreement ;
+    dpv:hasJointDataControllers ex:HarbourviewGroup ;
+    dpv:hasPurpose ex:PayStaff ;
+    dpv:hasDataSubject ex:Employees ;
+    dpv:hasPersonalData ex:EmployeeContact , ex:SalaryDetails ;
+    dpv:hasStorageCondition ex:SixYearsAfterTaxYear ;
+    dpv:hasTechnicalMeasure ex:PensionPortalMFA ;
+    dpv:hasOrganisationalMeasure ex:PinecrestConfidentiality .
+
+ex:PensionPortalMFA a dpv:TechnicalMeasure , dpv:MultiFactorAuthentication ;
+    dpv:hasName "MFA on the pension administration portal" .
+ex:PinecrestConfidentiality a dpv:OrganisationalMeasure , dpv:ConfidentialityAgreement ;
+    dpv:hasName "Confidentiality agreements for all Pinecrest staff" .

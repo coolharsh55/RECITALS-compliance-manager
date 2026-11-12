@@ -11,6 +11,7 @@ Responsibilities:
 Compliance checking is handled by the Compliance API.
 """
 
+import copy
 import os
 import uuid
 import re
@@ -23,6 +24,8 @@ from rdflib import URIRef
 from rdflib.namespace import XSD
 from datetime import datetime
 
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi import (
     FastAPI,
     File,
@@ -55,6 +58,18 @@ app = FastAPI(
     title="RECITALS Input API"
 )
 
+# The compliance web interface (compliance-api /ui) uploads
+# data and creates use cases from the browser.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv(
+        "UI_ORIGINS",
+        "http://localhost:8001,http://127.0.0.1:8001"
+    ).split(","),
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["*"],
+)
+
 
 # --------------------------------------------------
 # Namespaces
@@ -80,15 +95,15 @@ FUSEKI_QUERY_URL = os.getenv(
     "http://fuseki:3030/dataset/query"
 )
 
-FUSEKI_USER = os.getenv(
-    "FUSEKI_USER",
-    "admin"
-)
+FUSEKI_USER = os.getenv("FUSEKI_USER")
+FUSEKI_PASSWORD = os.getenv("FUSEKI_PASSWORD")
 
-FUSEKI_PASSWORD = os.getenv(
-    "FUSEKI_PASSWORD",
-    "admin"
-)
+# Credentials come from the environment (.env via docker-compose).
+if not FUSEKI_USER or not FUSEKI_PASSWORD:
+    raise RuntimeError(
+        "FUSEKI_USER and FUSEKI_PASSWORD must be set "
+        "(copy .env.example to .env)"
+    )
 
 FUSEKI_UPDATE_URL = os.getenv(
     "FUSEKI_UPDATE_URL",
@@ -105,6 +120,7 @@ USE_CASE_ID_PATTERN = (
 # Models
 # --------------------------------------------------
 class Law(str, Enum):
+    """Laws a use case can be assessed against."""
     GDPR = "GDPR"
     NIS2 = "NIS2"
     EU_AI_ACT = "EU_AI_ACT"
@@ -113,20 +129,13 @@ class Law(str, Enum):
 # In the production RECITALS system this enum will be replaced by
 # a dynamic dropdown populated from GET /use-cases, which queries
 # the triple store.
-class UseCase(str, Enum):
-    UC1 = "UC1"
-    UC2 = "UC2"
-    UC3 = "UC3"
     
 class UseCaseCreate(BaseModel):
+    """Request body model for creating a use case (not used by the form-based endpoints)."""
     label: str
     laws: List[Law]
     use_case_id: Optional[str] = None
 
-class LawUpdate(BaseModel):
-    use_case_id: UseCase
-    law: List[Law]
-    
 # --------------------------------------------------
 # Validation helpers
 # --------------------------------------------------
@@ -135,6 +144,7 @@ def validate_use_case_id(
     use_case_id: str
 ):
 
+    """Reject (422) a use case id that does not match USE_CASE_ID_PATTERN."""
     if not re.fullmatch(
         USE_CASE_ID_PATTERN,
         use_case_id
@@ -142,7 +152,9 @@ def validate_use_case_id(
         raise HTTPException(
             status_code=422,
             detail=(
-                "Invalid use case identifier"
+                "Invalid use case identifier: start with a letter, "
+                "then use only letters, numbers, '_' or '-' "
+                "(at most 80 characters)"
             )
         )
 
@@ -152,7 +164,19 @@ def use_case_uri(
     use_case_id: str
 ):
 
+    """Return the URI that identifies a use case."""
     return RECITALS[use_case_id]
+
+
+
+def use_case_graph_uri(
+    use_case_id: str
+):
+
+    # Named graph holding the RDF submitted for one use case.
+    # The Compliance API validates exactly this graph.
+    """Return the named graph that holds a use case's uploaded data."""
+    return RECITALS["graph/" + use_case_id]
 
 
 
@@ -164,6 +188,7 @@ def parse_turtle(
     content: bytes
 ) -> Graph:
 
+    """Parse uploaded bytes as UTF-8 Turtle; answer 400 if they are not valid."""
     try:
         turtle = content.decode(
             "utf-8"
@@ -203,14 +228,23 @@ def parse_turtle(
 # --------------------------------------------------
 
 def store_graph(
-    graph: Graph
+    graph: Graph,
+    graph_uri: Optional[str] = None
 ):
 
+    """Add a graph to Fuseki, into the named graph graph_uri or the default graph."""
     try:
 
+        # Graph Store Protocol upload; without a graph name it goes to the default graph
         response = requests.post(
 
             FUSEKI_DATA_URL,
+
+            params=(
+                {"graph": str(graph_uri)}
+                if graph_uri
+                else None
+            ),
 
             data=graph.serialize(
                 format="turtle"
@@ -238,6 +272,7 @@ def store_graph(
         )
 
 
+    # Fuseki answers 200, 201 or 204 when the data is stored
     if response.status_code not in (
         200,
         201,
@@ -256,8 +291,10 @@ def query_fuseki(
     query: str
 ):
 
+    """Run a SPARQL query on Fuseki and return the JSON results."""
     try:
 
+        # SPARQL query over HTTP; results come back as SPARQL JSON
         response = requests.post(
 
             FUSEKI_QUERY_URL,
@@ -309,6 +346,7 @@ def use_case_exists(
     use_case_id: str
 ):
 
+    """Return True if a use case with this id is stored in Fuseki."""
     resource = use_case_uri(
         use_case_id
     )
@@ -345,6 +383,7 @@ def get_root_resources(
     graph: Graph
 ):
 
+    """Return the resources typed recitals:UseCaseResource in an uploaded graph."""
     resources = []
 
 
@@ -424,7 +463,7 @@ def get_root_resources(
 
 @app.post("/use-cases", status_code=201)
 def create_use_case(
-    use_case_id: UseCase = Form(...),
+    use_case_id: str = Form(...),
     law: Law = Form(...),
     label: str = Form(...)
 ):
@@ -432,15 +471,18 @@ def create_use_case(
     # if not use_case_id:
     #     use_case_id = "UC-" + str(uuid.uuid4())
 
+    """POST /use-cases: create a use case with its id, label and first law (409 if the id exists)."""
     validate_use_case_id(use_case_id)
 
     # Do not create the use case again
     if use_case_exists(use_case_id):
-        return {
-            "message": "Use case already exists",
-            "use_case_id": use_case_id,
-            "uri": str(use_case_uri(use_case_id))
-        }
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Use case {use_case_id} already exists; "
+                "use PATCH /use-cases/{id}/laws to add a law to it"
+            )
+        )
 
     graph = Graph()
 
@@ -465,7 +507,7 @@ def create_use_case(
 
     return {
         "message": "Use case created successfully",
-        "use_case_id": use_case_id.value,
+        "use_case_id": use_case_id,
         "label": label,
         "applicable_laws": law.value ,
         "created_at": created_at.isoformat(),
@@ -475,6 +517,7 @@ def create_use_case(
 @app.get("/use-cases")
 def list_use_cases():
 
+    """GET /use-cases: list the stored use cases with their laws and dates."""
     query = f"""
     PREFIX recitals: <{RECITALS}>
     PREFIX rdfs: <{RDFS}>
@@ -567,47 +610,13 @@ def list_use_cases():
 
 #     return list(use_cases.values())
 
-# @app.patch("/use_cases/laws")
-# def update_use_case(
-#     use_case: UseCase = Form(...),
-#     law: Law = Form(...)
-# ):
-#     use_case_id = use_case.value
-
-#     validate_use_case_id(use_case_id)
-
-#     if not use_case_exists(use_case_id):
-#         raise HTTPException(
-#             status_code=404,
-#             detail="Use case not found"
-#         )
-
-#     query = f"""
-#     PREFIX recitals: <{RECITALS}>
-
-#     INSERT DATA {{
-#         <{use_case_uri(use_case_id)}>
-#             recitals:hasApplicableLaw
-#             recitals:{law.value} .
-#     }}
-#     """
-
-#     update_fuseki(query)
-
-#     return {
-#         "message": "Applicable law updated",
-#         "use_case_id": use_case_id,
-#         "added_law": law.value,
-#     }
-
-@app.patch("/use_cases/laws")
-def update_use_case(
-    use_case: UseCase = Form(...),
+@app.patch("/use-cases/{use_case_id}/laws")
+def add_law_to_use_case(
+    use_case_id: str,
     law: Law = Form(...)
 ):
 
-    use_case_id = use_case.value
-
+    """PATCH /use-cases/{use_case_id}/laws: add another applicable law to a use case."""
     validate_use_case_id(use_case_id)
 
     if not use_case_exists(use_case_id):
@@ -618,6 +627,7 @@ def update_use_case(
 
     resource = use_case_uri(use_case_id)
 
+    # Add the law and replace the modification date in one update
     modified_at = datetime.now(timezone.utc)
 
     query = f"""
@@ -654,6 +664,7 @@ def update_use_case(
 
 def update_fuseki(query: str):
 
+    """Run a SPARQL update on Fuseki."""
     try:
         response = requests.post(
             FUSEKI_UPDATE_URL,
@@ -703,6 +714,7 @@ def update_fuseki(query: str):
     
 def insert_law(use_case_id: str, law: Law):
 
+    """Add an applicable law to a use case in Fuseki."""
     query = f"""
     PREFIX recitals: <{RECITALS}>
 
@@ -728,6 +740,7 @@ async def upload_input(
 ):
 
 
+    """POST /input: store an uploaded Turtle file in the use case's named graph and record the submission."""
     validate_use_case_id(
         use_case_id
     )
@@ -739,7 +752,7 @@ async def upload_input(
 
         raise HTTPException(
             status_code=404,
-            detail="Use case does not exist"
+            detail="Use case not found"
         )
 
 
@@ -764,7 +777,8 @@ async def upload_input(
     #
 
     store_graph(
-        rdf
+        rdf,
+        use_case_graph_uri(use_case_id)
     )
 
 
@@ -868,3 +882,71 @@ async def upload_input(
         ]
 
     }
+
+
+# ============================================================
+# Use case dropdowns on /docs
+# ============================================================
+
+# Parameters and form fields that take an existing use case.
+# Creating a use case (POST /use-cases) stays free text.
+USE_CASE_FIELDS = [
+    ("/input", "post", "use_case_id"),
+    ("/use-cases/{use_case_id}/laws", "patch", "use_case_id"),
+]
+
+
+def openapi_with_use_cases():
+
+    """
+    The /docs page offers the use cases stored in Fuseki as a
+    dropdown. The schema is rebuilt on every request so new use
+    cases appear after a reload; if Fuseki cannot be reached the
+    fields stay free text.
+    """
+
+    schema = copy.deepcopy(
+        get_openapi(
+            title=app.title,
+            version=app.version,
+            description=app.description,
+            routes=app.routes
+        )
+    )
+
+    try:
+        ids = sorted({u["use_case_id"] for u in list_use_cases()})
+    except Exception:
+        return schema
+
+    if not ids:
+        return schema
+
+    def dropdown(old):
+        """Return a schema that offers the given values as a dropdown."""
+        return {
+            "type": "string",
+            "enum": ids,
+            "title": old.get("title", "Use case"),
+            "description": "Existing use cases. Created a new one? Reload this page to see it in the list."
+        }
+
+    for path, method, field in USE_CASE_FIELDS:
+
+        operation = schema["paths"][path][method]
+
+        for parameter in operation.get("parameters", []):
+            if parameter["name"] == field:
+                parameter["schema"] = dropdown(parameter["schema"])
+
+        for media in operation.get("requestBody", {}).get("content", {}).values():
+            ref = media["schema"].get("$ref")
+            if ref:
+                properties = schema["components"]["schemas"][ref.rsplit("/", 1)[-1]]["properties"]
+                if field in properties:
+                    properties[field] = dropdown(properties[field])
+
+    return schema
+
+
+app.openapi = openapi_with_use_cases

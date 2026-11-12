@@ -1,0 +1,62 @@
+# EU AI Act Art. 11 - Technical documentation (NON-COMPLIANT)
+# The same data as eu_ai_act_11_compliant.ttl with one change: the documentation
+# describes version 2.0.0 while version 2.1.0 is on the market
+# (marked "NON-COMPLIANT CHANGE" below).
+# Expected findings:
+#   AIA11-1-3  Violation  documentation does not cover the current version
+
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix tech: <https://w3id.org/dpv/tech#> .
+@prefix eu-aiact: <https://w3id.org/dpv/legal/eu/aiact#> .
+@prefix ex: <http://example.com/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:TalentMatch
+    a eu-aiact:HighRiskAISystem , eu-aiact:HighRiskAISystem-AnnexIII-4-a ;
+    dpv:hasName "TalentMatch application ranking model" ;
+    tech:hasProvider ex:Harbourview ;                                # Annex IV 1(a)
+    tech:hasIntendedUse ex:ShortlistSupport ;                        # Annex IV 1(a)
+    schema:version "2.1.0" ;
+    tech:hasMarketAvailabilityStatus [
+        a eu-aiact:PlacedOnEUMarket ;
+        dct:date "2026-06-01"^^xsd:date ] ;
+    tech:hasDocumentation ex:TalentMatchTechDoc .                    # Art. 11(1)
+
+ex:Harbourview a eu-aiact:AIProvider ; dpv:hasName "Harbourview Software Ltd" .
+ex:ShortlistSupport a eu-aiact:IntendedPurpose ;
+    dpv:hasName "Suggest a shortlist to recruiters, who make the final decision" .
+
+ex:TalentMatchTechDoc
+    a eu-aiact:TechnicalDocumentation ;
+    dct:created "2026-04-15"^^xsd:date ;                             # before placing on market
+    dct:modified "2026-09-20"^^xsd:date ;
+    schema:version "2.0.0" ;                                         # NON-COMPLIANT CHANGE: was "2.1.0"
+    dct:hasPart ex:TD_General ;                                      # Annex IV 1
+    dct:hasPart ex:TD_Architecture ;                                 # Annex IV 2
+    dct:hasPart ex:TD_HumanOversight ;                               # Annex IV 3
+    dct:hasPart ex:TD_Performance ;                                  # Annex IV 4
+    dct:hasPart ex:TD_RiskManagement ;                               # Annex IV 5
+    dct:hasPart ex:TD_Changes ;                                      # Annex IV 6
+    dct:conformsTo ex:ISO_IEC_42001 ;                                # Annex IV 7
+    dct:hasPart ex:TD_DoC ;                                          # Annex IV 8
+    dct:hasPart ex:TD_PMM .                                          # Annex IV 9
+
+ex:TD_General a eu-aiact:InstructionForUse ;
+    dpv:hasName "Section 1: system description, versions, hardware, instructions for use" .
+ex:TD_Architecture a eu-aiact:SystemArchitectureDescription ;
+    dpv:hasName "Section 2: architecture, training methodology, data sheets, validation" .
+ex:TD_HumanOversight a eu-aiact:ProviderHumanOversightMeasure ;
+    dpv:hasName "Section 3: capabilities, limitations, recruiter review and override" .
+ex:TD_Performance a eu-aiact:AISystemPerformance ;
+    dpv:hasName "Section 4: ranking accuracy and shortlisting rate per subgroup, rationale for metrics" .
+ex:TD_RiskManagement a eu-aiact:RiskManagementSystem ;
+    dpv:hasName "Section 5: Art. 9 risk management file" .
+ex:TD_Changes a eu-aiact:ChangeDescription ;
+    dpv:hasName "Section 6: change log from v1.0 to v2.1.0" .
+ex:ISO_IEC_42001 dpv:hasName "ISO/IEC 42001:2023 AI management system" .
+ex:TD_DoC a eu-aiact:EUDeclarationOfConformity ;
+    dpv:hasName "Section 8: EU declaration of conformity" .
+ex:TD_PMM a eu-aiact:PostMarketMonitoringPlan ;
+    dpv:hasName "Section 9: post-market monitoring plan" .

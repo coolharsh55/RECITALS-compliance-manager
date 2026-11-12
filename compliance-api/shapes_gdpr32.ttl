@@ -1,580 +1,228 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix ex: <http://example.com/> .
 @prefix dpv: <https://w3id.org/dpv#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix dct: <http://purl.org/dc/terms/> .
+@prefix recitals: <http://example.org/recitals/> .
 
 #################################################
-# BASE ROPA Shape
+# GDPR Article 32 - Security of processing
+#
+# Checked per processing activity (dpv:Process).
+#
+# A measure counts as a given kind when it is that DPV
+# concept itself (dpv:hasTechnicalMeasure dpv:Encryption),
+# an instance of it (ex:M a dpv:Encryption), or of a
+# subclass declared in the data.
+#
+# Art. 32(1)(a)-(d) list measures "as appropriate", so a
+# missing one is a Warning; it becomes a Violation where
+# the processing involves special category data or a high
+# risk level, which raises what is appropriate.
 #################################################
 
-ex:BaseROPAShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:ROPA ;
-    dct:identifier "G_Base-1"^^xsd:string;
-
-    sh:or (        
-        [
-            sh:property [
-                sh:path dpv:hasDataController ;
-                sh:minCount 1 ;
-                sh:class dpv:DataController ;
-            ]
-        ]
-        [
-            sh:property [
-                sh:path dpv:hasDataProcessor ;
-                sh:minCount 1 ;
-                sh:class dpv:DataProcessor ;
-            ]
-        ]
-        [
-            sh:property [
-                sh:path dpv:hasDataProcessor ;
-                sh:minCount 1 ;
-                sh:class dpv:DataSubProcessor ;
-            ]
-        ]
-    ) ;
-
-    sh:message "ROPA must identify at least a Data Controller or a Data Processor." .
-
-
-#################################################
-# Processing Activity Shape
-#################################################
-
-ex:ProcessingShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:Process ;
-
-    sh:node [
-        sh:and (
-            ex:LegalBasisRequirement
-            ex:PurposeRequirement
-            ex:DataSubjectRequirement
-            ex:PersonalDataRequirement
-            ex:RecipientRequirement
-            ex:StorageRequirement
-            ex:TechnicalMeasureRequirement
-            ex:OrganisationalMeasureRequirement
-        ) ;
-        sh:message "ROPA is incomplete. One or more mandatory GDPR Art.30 fields are missing." ;
-    ] ;
-
-
-    # Joint Controller
-    sh:property [
-        sh:path dpv:hasJointDataController ;
-        dct:identifier "A30-1-11"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:JointDataController ;
-        sh:message "Another organisation not identified as joint controllers." ;
-    ] ;
-
-    # Purpose
-    sh:property [
-        sh:path dpv:hasPurpose ;
-        dct:identifier "A30-1-14"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Purpose ;
-        sh:message "activity does not contain purpose of processing." ;
-    ] ;
-
-    # Data Subjects
-    sh:property [
-        sh:path dpv:hasDataSubject ;
-        dct:identifier "A30-1-15"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataSubject ;
-        sh:message "activity does not contain categories of data subjects." ;
-    ] ;
-
-    # Personal Data Categories
-    sh:property [
-        sh:path dpv:hasPersonalData ;
-        dct:identifier "A30-1-16"^^xsd:string;
-        sh:minCount 1 ;
-        #sh:class dpv:PersonalData ;
-        sh:message "activity does not contain categories of personal data." ;
-    ] ;
-
-
-
-    # Transfer validation
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-18"^^xsd:string;
-        dct:identifier "A30-1-43"^^xsd:string;
-        sh:minCount 0 ;
-        sh:node dpv:OrganisationalMeasure ;
-        sh:message "organisational measures not contained." ;
-    ] ;
-
-    # Storage
-    sh:property [
-        sh:path dpv:hasStorageCondition ;
-        dct:identifier "A30-1-24"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:StorageDuration ;
-        sh:message "duration of storage of personal data after which it will be erased if not furtehr needed not contained." ;
-    ] ;
-
-    # Technical Measures
-    sh:property [
-        sh:path dpv:hasTechnicalMeasure ;
-        dct:identifier "A30-1-25"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:TechnicalMeasure ;
-        sh:message "technical measures not contained." ;
-    ] ;
-
-    # Organisational Measures
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-26"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:OrganisationalMeasure ;
-        sh:message "organisational measures not contained." ;
-    ] ;
-
-    .
-
-#################################################
-# Transfer Shape
-#################################################
-
-ex:TransferShape
-    a sh:NodeShape ;
-    dct:identifier "A30-1-18"^^xsd:string;
-    sh:targetClass dpv:Transfer ;
-
-    # Recipients
-    sh:property [
-        sh:path dpv:hasDataImporter ;
-        dct:identifier "A30-1-17"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Recipient ;
-        sh:message "Activity does not contain categories of recipients." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasLegalBasis ;
-        sh:minCount 1 ;
-        sh:message "Transfer must specify a legal basis." ;
+ex:
+    sh:declare [
+        sh:prefix "dpv" ;
+        sh:namespace "https://w3id.org/dpv#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
     ] .
 
 #################################################
-# Recipient Shape
+# Scope: there must be something to assess
 #################################################
 
-ex:RecipientShape
+ex:Art32ScopeShape
     a sh:NodeShape ;
-    sh:targetClass dpv:Recipient ;
+    sh:targetNode recitals:GDPRArticle32Scope ;
 
-    #############################################
-    # 1. Missing Location
-    #############################################
+    # GDPR Art. 32 scope: fails when the data has nothing this article applies to
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Location of recipient not identified." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-19"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "A32-0"^^xsd:string ;
+        sh:message "No processing activity (dpv:Process) found; Art. 32 cannot be assessed." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { ?p rdf:type dpv:Process . }
+            }
+        """ ;
+    ] .
+
+#################################################
+# Processing activity
+#################################################
+
+ex:Art32ProcessingShape
+    a sh:NodeShape ;
+    sh:targetClass dpv:Process ;
+
+    # Art. 32(1): appropriate technical and organisational measures
+    sh:property [
+        sh:path dpv:hasTechnicalMeasure ;
+        dct:identifier "A32-1-1"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "No technical security measures implemented for the processing activity (Art. 32(1))." ;
+    ] ;
+
+    # GDPR Art. 32(1): no organisational security measures implemented for the processing activity
+    sh:property [
+        sh:path dpv:hasOrganisationalMeasure ;
+        dct:identifier "A32-1-2"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "No organisational security measures implemented for the processing activity (Art. 32(1))." ;
+    ] ;
+
+    # Art. 32(1) and (2): level of security must take account of the risk
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "A32-2"^^xsd:string ;
+        sh:message "Risk to data subjects not assessed: no risk, risk level or risk assessment recorded (Art. 32(1)-(2))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { $this dpv:hasRisk ?r . }
+                FILTER NOT EXISTS { $this dpv:hasRiskLevel ?l . }
                 FILTER NOT EXISTS {
-                    $this dpv:hasLocation ?loc .
+                    $this dpv:hasOrganisationalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:RiskAssessment, dpv:DPIA))
                 }
             }
         """ ;
     ] ;
 
-    #############################################
-    # 2. Third Country Warning
-    #############################################
+    # Art. 32(1)(a): pseudonymisation and encryption (sensitive processing)
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Location of recipient is a third country." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-20"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "A32-1-a"^^xsd:string ;
+        sh:message "Processing involves special category data or high risk but neither encryption nor pseudonymisation is applied (Art. 32(1)(a))." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
-
-                # Case 1: explicit third country relation
+            SELECT $this WHERE {
                 {
-                    $this dpv:hasThirdCountry ?tc .
+                    $this dpv:hasPersonalData ?pd .
+                    ?pd rdf:type?/rdfs:subClassOf* dpv:SpecialCategoryPersonalData .
+                } UNION {
+                    $this dpv:hasRiskLevel ?level .
+                    ?level rdf:type?/rdfs:subClassOf* ?high .
+                    FILTER (STRENDS(STR(?high), "HighRisk") || STRENDS(STR(?high), "VeryHighRisk"))
                 }
-
-                UNION
-
-                # Case 2: location typed as ThirdCountry
-                {
-                    $this dpv:hasLocation ?loc .
-                    ?loc rdf:type dpv:ThirdCountry .
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:Encryption, dpv:Pseudonymisation))
                 }
-            } LIMIT 1
-        """ ;
-    ] ;
-
-    #############################################
-    # 3. International Organisation Warning
-    #############################################
-    sh:sparql [
-        a sh:SPARQLConstraint ;
-        sh:message "Recipient is an international organisation." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-22"^^xsd:string ;
-
-        sh:select """
-            SELECT DISTINCT $this WHERE {
-                $this rdf:type dpv:InternationalOrganisation .
-            } LIMIT 1
+            }
         """ ;
     ] .
 
-# ex:RecipientShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:Recipient ;
-
-#     # Optional warning: if recipient does NOT have a location
-#     sh:property [
-#         sh:path dpv:hasLocation ;
-#         dct:identifier "A30-1-19"^^xsd:string;
-#         dct:identifier "A30-1-44"^^xsd:string;
-#         sh:minCount 1 ;               # optional, not mandatory
-#         sh:severity sh:Warning ;      # warning
-#         sh:message "Location of recipient not identified." ;
-#     ] ;
-
-#     # Optional warning: Location of recipient is not third country
-#     sh:property [
-#         sh:path dpv:hasLocation ;
-#         sh:hasValue dpv:ThirdCountry ;
-#         dct:identifier "A30-1-20"^^xsd:string;
-#         dct:identifier "A30-1-45"^^xsd:string;
-#         sh:minCount 1 ;               # optional
-#         sh:in ( dpv:ThirdCountry ) ;   # third country allowed
-#         sh:severity sh:Warning ;
-#         sh:message "Location of recipient is a third country." ;
-#     ] ;
-    
-#     # Optional warning: if recipient is not InternationalOrganisation
-#     sh:property [
-#         sh:path rdf:type ;
-#         sh:hasValue dpv:InternationalOrganisation ;
-#         dct:identifier "A30-1-22"^^xsd:string;
-#         dct:identifier "A30-1-46"^^xsd:string;
-#         sh:minCount 1 ;               # optional
-#         sh:severity sh:Warning ;      # warning, not violation
-#         sh:message "Location of recipient is international organisation." ;
-#     ] 
-#     .
-
-  # Optional warning: Location of recipient is not third country
-    # sh:sparql [
-    #     a sh:SPARQLConstraint ;
-    #     sh:message "Recipient is located in a third country." ;
-    #     sh:severity sh:Warning ;
-    #     sh:select """
-    #         SELECT $this WHERE {
-    #             $this dpv:hasLocation ?loc .
-    #             ?loc rdf:type dpv:ThirdCountry .
-    #         }
-    #     """ ;
-    # ] ;
-
-    # sh:sparql [
-    #     a sh:SPARQLConstraint ;
-    #     sh:message "Recipient is an international organisation." ;
-    #     sh:severity sh:Warning ;
-    #     sh:select """
-    #         SELECT DISTINCT $this WHERE {
-    #             $this rdf:type dpv:InternationalOrganisation .
-    #         }
-    #     """ ;
-    # ] ;.
-
-#################################################
-# Controller ROPA Shape
-#################################################
-
-# ex:ControllerROPAShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:ROPA ;
-
-#     sh:property [
-#         sh:path dpv:hasDataController ;
-#         sh:minCount 1 ;
-#         sh:class dpv:DataController ;
-#         sh:message "ROPA must identify a Data Controller." ;
-#     ] ;
-
-# .
-
-ex:ControllerROPAShape
+# Same targets, warning level: checks the law asks for "as appropriate" or "where appropriate"
+ex:Art32ProcessingWarningShape
     a sh:NodeShape ;
-    sh:targetSubjectsOf dpv:hasDataController ;
+    sh:targetClass dpv:Process ;
+    # Severity applies to every constraint of a shape, so the
+    # "as appropriate" checks live in their own shape.
+    sh:severity sh:Warning ;
 
-    sh:property [
-        sh:path dpv:hasProcess ;
-        #dct:identifier "A30-1-22"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Process ;
-        sh:message "Controller ROPA must reference at least one processing activity." ;
+    # Art. 32(1)(a): pseudonymisation and encryption (as appropriate)
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "A32-1-a"^^xsd:string ;
+        sh:message "Neither encryption nor pseudonymisation of personal data is recorded (Art. 32(1)(a))." ;
+        sh:select """
+            SELECT $this WHERE {
+                # Sensitive processing is reported as a Violation above
+                FILTER NOT EXISTS {
+                    $this dpv:hasPersonalData ?pd .
+                    ?pd rdf:type?/rdfs:subClassOf* dpv:SpecialCategoryPersonalData .
+                }
+                FILTER NOT EXISTS {
+                    $this dpv:hasRiskLevel ?level .
+                    ?level rdf:type?/rdfs:subClassOf* ?high .
+                    FILTER (STRENDS(STR(?high), "HighRisk") || STRENDS(STR(?high), "VeryHighRisk"))
+                }
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:Encryption, dpv:Pseudonymisation))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasRepresentative ;
-        dct:identifier "A30-1-5"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Representative ;
-        sh:message "Controller ROPA must include the Controller's Representative." ;
+    # Art. 32(1)(b): confidentiality, integrity, availability and resilience
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "A32-1-b"^^xsd:string ;
+        sh:message "No measure ensuring ongoing confidentiality and integrity (e.g. access control, authentication) is recorded (Art. 32(1)(b))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:AccessControlMethod, dpv:AuthenticationProtocols, dpv:Encryption, dpv:SecurityMethod))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasDataProtectionOfficer ;
-        dct:identifier "A30-1-8"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataProtectionOfficer ;
-        sh:message "Controller ROPA must include a Data Protection Officer where required." ;
+    # Art. 32(1)(c): restore availability and access after an incident
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "A32-1-c"^^xsd:string ;
+        sh:message "No backup or recovery measure to restore availability of personal data after an incident is recorded (Art. 32(1)(c))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasTechnicalMeasure|dpv:hasOrganisationalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:DataBackupProtocols, dpv:DisasterRecoveryProcedures, dpv:IncidentManagementProcedures))
+                }
+            }
+        """ ;
     ] ;
 
-.
-
-#################################################
-# Controller Shape
-#################################################
-
-ex:ControllerShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataController ;
-
-    sh:property [
-        sh:path dpv:hasRecordOfActivity ;
-        dct:identifier "A30-1-1"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:ROPA ;
-        sh:message "Controller does not have a ROPA." ] ; 
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-3"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." ;
+    # Art. 32(1)(d): regular testing and evaluation of effectiveness
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "A32-1-d"^^xsd:string ;
+        sh:message "No process for regularly testing and evaluating the security measures is recorded (Art. 32(1)(d))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasOrganisationalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:ReviewProcedure, dpv:CybersecurityAssessment, dpv:Certification))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-4"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA does not contain contact details of controller." ;
-    ] ;
-
-
-.
-
-#################################################
-# Processor Shape
-#################################################
-
-ex:ProcessorShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataProcessor ;
-
-    sh:property [
-        sh:path dpv:hasRecordOfActivity ;
-        dct:identifier "A30-1-27"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:ROPA ;
-        sh:message "Data Processor does not have a ROPA." ] ;
-        
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-29"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." 
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-30"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA does not contain contact details of controller." 
-    ] ;
-.
-
-
-#################################################
-# Processor ROPA Shape
-#################################################
-
-# ex:ProcessorROPAShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:DataProcessingRecord ;
-
-#     sh:property [
-#         sh:path dpv:hasDataProcessor ;
-#         sh:minCount 1 ;
-#         sh:class dpv:DataProcessor ;
-#         sh:message "Processor ROPA must identify a Data Processor." ;
-#     ] ;
-
-ex:ProcessorROPAShape
-    a sh:NodeShape ;
-    sh:targetSubjectsOf dpv:hasDataProcessor ;
-
-    sh:property [
-        sh:path dpv:hasProcess ;
-        sh:minCount 1 ;
-        sh:class dpv:Process ;
-        sh:message "Processor ROPA must reference at least one processing activity." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasRepresentative ;
-        dct:identifier "A30-1-31"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Representative ;
-        sh:message "Processor ROPA must include its Representative." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasDataProtectionOfficer ;
-        dct:identifier "A30-1-34"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataProtectionOfficer ;
-        sh:message "Processor ROPA must include a Data Protection Officer where required." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasTechnicalMeasure ;
-        dct:identifier "A30-1-50"^^xsd:string;
-        sh:minCount 1 ;
-        sh:message "Processor ROPA must include technical security measures." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-51"^^xsd:string;
-        sh:minCount 1 ;
-        sh:message "Processor ROPA must include organisational security measures." ;
+    # Art. 32(4): persons acting under authority process only on instruction
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "A32-4"^^xsd:string ;
+        sh:message "No staff training or confidentiality obligation for persons with access to personal data is recorded (Art. 32(4))." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dpv:hasOrganisationalMeasure ?m .
+                    ?m rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (dpv:StaffTraining, dpv:DataProtectionTraining, dpv:CybersecurityTraining, dpv:NDA))
+                }
+            }
+        """ ;
     ] .
-
-#################################################
-# Representative Shape
-#################################################
-
-ex:RepresentativeShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:Representative ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-6"^^xsd:string;
-        dct:identifier "A30-1-32"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of controller's representative." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-7"^^xsd:string;
-        dct:identifier "A30-1-33"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of controller's representative." ;
-    ] .
-
-
-
-
-#################################################
-# DPO Shape
-#################################################
-
-ex:DPOShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataProtectionOfficer ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-9"^^xsd:string;
-        dct:identifier "A30-1-35"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of data protection officer." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-10"^^xsd:string;
-        dct:identifier "A30-1-36"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of data protection officer." ;
-    ] .
-
-#################################################
-# Joint Controller Shape
-#################################################
-
-ex:JointControllerShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:JointDataController ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-12"^^xsd:string;
-        sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of joint controller." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-13"^^xsd:string;
-        sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of joint controller." ;
-    ] .
-
-#################################################
-# ROPA Exemption Rule (A30.5 logic)
-#################################################
-
-# ex:ROPAExemptionShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:DataController ;
-
-#     sh:property [
-#         sh:path ex:employeeCount ;
-#         sh:datatype xsd:integer ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:isLowRiskProcessing ;
-#         sh:datatype xsd:boolean ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:isOccasionalProcessing ;
-#         sh:datatype xsd:boolean ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:hasSpecialCategoryData ;
-#         sh:datatype xsd:boolean ;
-#     ] .
-

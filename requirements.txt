@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-pydantic
-rdflib
-requests
-python-multipart

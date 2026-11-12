@@ -1,0 +1,88 @@
+# EU AI Act Art. 10 - Data and data governance (NON-COMPLIANT)
+# The same data as eu_ai_act_10_compliant.ttl with one change: the training data
+# set has no examination for possible biases
+# (marked "NON-COMPLIANT CHANGE" below).
+# Expected findings:
+#   AIA10-2-f  Violation  training data not examined for biases
+
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix pd: <https://w3id.org/dpv/pd#> .
+@prefix ai: <https://w3id.org/dpv/ai#> .
+@prefix eu-aiact: <https://w3id.org/dpv/legal/eu/aiact#> .
+@prefix ex: <http://example.com/> .
+@prefix recitals: <http://example.org/recitals/> .
+
+ex:TalentMatch
+    a eu-aiact:HighRiskAISystem , eu-aiact:HighRiskAISystem-AnnexIII-4-a ;
+    dpv:hasName "TalentMatch application ranking model" ;
+    ai:hasModel ex:TalentMatchModel ;
+    dpv:hasGeographicCoverage ex:Ireland ;                           # Art. 10(4)
+    ai:hasTrainingData ex:TalentTrainingSet ;                        # Art. 10(1)
+    ai:hasValidationData ex:TalentValidationSet ;
+    ai:hasTestingData ex:TalentTestSet .
+
+ex:TalentMatchModel a ai:TrainedModel ; dpv:hasName "Ranking model trained on past applications" .
+ex:Ireland a dpv:Country ; dpv:hasName "Ireland" .
+
+ex:TalentTrainingSet
+    a eu-aiact:TrainingData ;
+    dpv:hasName "Applications 2019-2024 with interview outcome (training split)" ;
+    recitals:hasDesignChoice "Label is whether a human recruiter invited the applicant to interview" ;   # 10(2)(a)
+    dpv:hasProcessing ex:ATSExport ;                                 # 10(2)(b)
+    dpv:hasDataSource ex:ApplicantTrackingSystem ;
+    dpv:hasPurpose ex:Recruitment ;                                  # original purpose, 10(2)(b)
+    dpv:hasProcessing ex:CVCleaning ;                                # 10(2)(c)
+    recitals:hasAssumption "CV content reflects skills; past interview decisions are a usable signal after bias review" ; # 10(2)(d)
+    dpv:hasAssessment [ a dpv:DataSuitabilityAssessment ; dpv:hasName "180k applications across 40 job families" ] ;   # 10(2)(e)
+    # NON-COMPLIANT CHANGE: bias examination removed; the compliant file has
+    #   dpv:hasAssessment [ a ai:BiasAssessment ; dpv:hasName "Shortlisting rates compared across gender, age band and ethnicity" ] ;
+    dpv:hasOrganisationalMeasure [ a ai:BiasMitigation ; dpv:hasName "Re-weighting and removal of proxy features such as graduation year" ] ; # 10(2)(g)
+    recitals:hasDataGapAnalysis "Few senior applicants; system not used for executive roles" ;      # 10(2)(h)
+    recitals:hasStatisticalProperties "Class balance and missingness per feature published in datasheet" ; # 10(3)
+    dpv:hasPersonalData ex:CVContent , ex:EthnicOrigin ;
+    # Art. 10(5) safeguards for special category data
+    dpv:hasTechnicalMeasure ex:ApplicantPseudonyms , ex:BiasLabAccess ;
+    dpv:hasStorageCondition ex:DeleteEthnicityAfterBiasReview ;
+    dpv:hasJustification [ a dpv:Justification ;
+        dpv:hasName "Ethnic origin is needed to detect shortlisting gaps between groups; synthetic data could not reproduce them" ] .
+
+ex:TalentValidationSet
+    a eu-aiact:ValidationData ;
+    dpv:hasName "Applications 2019-2024 (validation split)" ;
+    recitals:hasDesignChoice "Stratified 10% split by job family and year" ;
+    dpv:hasProcessing ex:ATSExport , ex:CVCleaning ;
+    dpv:hasDataSource ex:ApplicantTrackingSystem ;
+    recitals:hasAssumption "Split is representative of the training population" ;
+    dpv:hasAssessment [ a dpv:DataSuitabilityAssessment ; dpv:hasName "18k applications" ] ;
+    dpv:hasAssessment [ a ai:BiasAssessment ; dpv:hasName "Subgroup metrics computed" ] ;
+    dpv:hasOrganisationalMeasure [ a ai:BiasMitigation ; dpv:hasName "Thresholds tuned per subgroup where gaps found" ] ;
+    recitals:hasDataGapAnalysis "As for training set" ;
+    recitals:hasStatisticalProperties "Matches training distribution within 1%" .
+
+ex:TalentTestSet
+    a eu-aiact:TestingData ;
+    dpv:hasName "Applications 2025 (held-out test set)" ;
+    recitals:hasDesignChoice "Temporal hold-out to test drift" ;
+    dpv:hasProcessing ex:ATSExport , ex:TestLabelCheck ;
+    dpv:hasDataSource ex:ApplicantTrackingSystem ;
+    recitals:hasAssumption "2025 applications reflect deployment conditions" ;
+    dpv:hasAssessment [ a dpv:DataSuitabilityAssessment ; dpv:hasName "25k applications from 12 customers" ] ;
+    dpv:hasAssessment [ a ai:BiasAssessment ; dpv:hasName "Subgroup metrics computed" ] ;
+    dpv:hasOrganisationalMeasure [ a ai:BiasMitigation ;
+        dpv:hasName "Release blocked if any subgroup's shortlisting rate falls below 80% of the highest" ] ;
+    recitals:hasDataGapAnalysis "Part-time roles under-represented; monitored post-market" ;
+    recitals:hasStatisticalProperties "Published in model card" .
+
+ex:ATSExport a ai:DataCollection ; dpv:hasName "Export from the applicant tracking system with customers' agreement" .
+ex:CVCleaning a ai:DataCleaning ; dpv:hasName "De-duplication, removal of names and photos, label audit of 5% sample" .
+ex:TestLabelCheck a ai:DataLabelling ; dpv:hasName "Labels checked by two recruiters" .
+
+ex:ApplicantTrackingSystem dpv:hasName "Applicant tracking system" .
+ex:Recruitment a dpv:Purpose , dpv:RecruitmentManagement ; dpv:hasName "Manage job applications" .
+ex:CVContent a dpv:PersonalData , pd:EmploymentHistory , pd:EducationQualification ;
+    dpv:hasName "Work history, qualifications and skills from CVs" .
+ex:EthnicOrigin a dpv:SpecialCategoryPersonalData , pd:EthnicOrigin ;
+    dpv:hasName "Self-reported ethnic origin from equal opportunities form" .
+ex:ApplicantPseudonyms a dpv:Pseudonymisation ; dpv:hasName "Keyed-hash applicant pseudonyms" .
+ex:BiasLabAccess a dpv:AccessControlMethod ; dpv:hasName "Access only inside a secure analysis environment" .
+ex:DeleteEthnicityAfterBiasReview a dpv:StorageDuration ; dpv:hasName "Ethnicity field deleted after each bias review" .

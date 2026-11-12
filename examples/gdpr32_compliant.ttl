@@ -1,0 +1,48 @@
+# GDPR Art. 32 - Security of processing (COMPLIANT)
+# Harbourview Software Ltd keeps employee records, including sick leave
+# certificates, in its HR system.
+# Expected result: passed, no findings.
+
+@prefix dpv: <https://w3id.org/dpv#> .
+@prefix pd: <https://w3id.org/dpv/pd#> .
+@prefix ex: <http://example.com/> .
+@prefix risk: <https://w3id.org/dpv/risk#> .
+
+ex:EmployeeRecords
+    a dpv:Process ;
+    dpv:hasName "Employee records in the HR system" ;
+    dpv:hasPurpose ex:ManageStaff ;
+    dpv:hasDataSubject ex:Employees ;
+    dpv:hasPersonalData ex:SickLeaveRecords , ex:EmployeeContact , ex:SalaryDetails ;
+    dpv:hasRiskLevel risk:HighRisk ;                                 # Art. 32(1)-(2)
+    dpv:hasTechnicalMeasure
+        ex:HRSystemEncryption ,                                      # Art. 32(1)(a)
+        ex:HRRoleBasedAccess ,                                       # Art. 32(1)(b)
+        ex:NightlyBackups ;                                          # Art. 32(1)(c)
+    dpv:hasOrganisationalMeasure
+        ex:AnnualPenetrationTest ,                                   # Art. 32(1)(d)
+        ex:HRStaffTraining ,                                         # Art. 32(4)
+        ex:HRSystemDPIA .                                            # Art. 32(2)
+
+ex:ManageStaff a dpv:Purpose , dpv:PersonnelManagement ; dpv:hasName "Manage employment of staff" .
+ex:Employees a dpv:DataSubject , dpv:Employee ; dpv:hasName "Current and former employees" .
+
+ex:SickLeaveRecords a dpv:SpecialCategoryPersonalData , pd:HealthRecord ;
+    dpv:hasName "Sick leave certificates and occupational health notes" .
+ex:EmployeeContact a dpv:PersonalData , pd:Name , pd:PhysicalAddress , pd:TelephoneNumber ;
+    dpv:hasName "Name, home address and phone number" .
+ex:SalaryDetails a dpv:PersonalData , pd:Salary , pd:BankAccount ;
+    dpv:hasName "Salary and bank account" .
+
+ex:HRSystemEncryption a dpv:Encryption ;
+    dpv:hasName "AES-256 encryption at rest, TLS 1.3 in transit" .
+ex:HRRoleBasedAccess a dpv:AccessControlMethod ;
+    dpv:hasName "Role-based access with MFA; health data visible to HR only" .
+ex:NightlyBackups a dpv:DataBackupProtocols ;
+    dpv:hasName "Encrypted nightly off-site backups, restore tested quarterly" .
+ex:AnnualPenetrationTest a dpv:ReviewProcedure ;
+    dpv:hasName "Annual external penetration test and control review" .
+ex:HRStaffTraining a dpv:DataProtectionTraining ;
+    dpv:hasName "Mandatory yearly data protection training for HR staff" .
+ex:HRSystemDPIA a dpv:DPIA ;
+    dpv:hasName "DPIA for the HR system" .

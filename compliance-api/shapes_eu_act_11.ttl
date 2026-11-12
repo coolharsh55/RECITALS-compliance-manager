@@ -1,580 +1,354 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix ex: <http://example.com/> .
 @prefix dpv: <https://w3id.org/dpv#> .
+@prefix tech: <https://w3id.org/dpv/tech#> .
+@prefix eu-aiact: <https://w3id.org/dpv/legal/eu/aiact#> .
+@prefix schema: <https://schema.org/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix dct: <http://purl.org/dc/terms/> .
+@prefix recitals: <http://example.org/recitals/> .
 
 #################################################
-# BASE ROPA Shape
+# EU AI Act Article 11 - Technical documentation
+# (contents per Annex IV)
+#
+# Applies to high-risk AI systems (eu-aiact:HighRiskAISystem).
+# Terms come from DPV 2.3 and its tech: and eu-aiact:
+# extensions, plus Dublin Core and schema.org. The DPV
+# ontology is not loaded, so a system typed with a narrower
+# concept also needs the eu-aiact:HighRiskAISystem type.
+#
+#   ?system tech:hasDocumentation ?doc
+#   ?doc    a eu-aiact:TechnicalDocumentation
+#   ?system tech:hasProvider ?provider
+#   ?system dpv:hasPurpose or tech:hasIntendedUse ?purpose
+#   ?system schema:version "x.y"
+#   ?system tech:hasMarketAvailabilityStatus or tech:hasProvisionStatus ?status
+#   ?status a eu-aiact:PlacedOnMarket, PlacedOnEUMarket,
+#             PutIntoService or PutIntoServiceInEU ;
+#           dct:date "yyyy-mm-dd"
+#   ?doc    dct:created, dct:modified (xsd:date or xsd:dateTime)
+#   ?doc    schema:version "x.y"   (the system version it covers)
+#
+# Annex IV sections: ?doc dct:hasPart ?section, where the
+# section is (an instance of) the DPV concept:
+#   1 eu-aiact:InstructionForUse
+#   2 eu-aiact:SystemArchitectureDescription
+#   3 eu-aiact:ProviderHumanOversightMeasure
+#   4 eu-aiact:AISystemPerformance
+#   5 eu-aiact:RiskManagementSystem        (Art. 9)
+#   6 eu-aiact:ChangeDescription
+#   7 dct:conformsTo a standard, or a part that is an
+#     eu-aiact:CommonSpecification
+#   8 eu-aiact:EUDeclarationOfConformity   (Art. 47)
+#   9 eu-aiact:PostMarketMonitoringPlan or
+#     eu-aiact:PostMarketMonitoringSystemDocumentation (Art. 72)
 #################################################
 
-ex:BaseROPAShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:ROPA ;
-    dct:identifier "G_Base-1"^^xsd:string;
-
-    sh:or (        
-        [
-            sh:property [
-                sh:path dpv:hasDataController ;
-                sh:minCount 1 ;
-                sh:class dpv:DataController ;
-            ]
-        ]
-        [
-            sh:property [
-                sh:path dpv:hasDataProcessor ;
-                sh:minCount 1 ;
-                sh:class dpv:DataProcessor ;
-            ]
-        ]
-        [
-            sh:property [
-                sh:path dpv:hasDataProcessor ;
-                sh:minCount 1 ;
-                sh:class dpv:DataSubProcessor ;
-            ]
-        ]
-    ) ;
-
-    sh:message "ROPA must identify at least a Data Controller or a Data Processor." .
-
-
-#################################################
-# Processing Activity Shape
-#################################################
-
-ex:ProcessingShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:Process ;
-
-    sh:node [
-        sh:and (
-            ex:LegalBasisRequirement
-            ex:PurposeRequirement
-            ex:DataSubjectRequirement
-            ex:PersonalDataRequirement
-            ex:RecipientRequirement
-            ex:StorageRequirement
-            ex:TechnicalMeasureRequirement
-            ex:OrganisationalMeasureRequirement
-        ) ;
-        sh:message "ROPA is incomplete. One or more mandatory GDPR Art.30 fields are missing." ;
-    ] ;
-
-
-    # Joint Controller
-    sh:property [
-        sh:path dpv:hasJointDataController ;
-        dct:identifier "A30-1-11"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:JointDataController ;
-        sh:message "Another organisation not identified as joint controllers." ;
-    ] ;
-
-    # Purpose
-    sh:property [
-        sh:path dpv:hasPurpose ;
-        dct:identifier "A30-1-14"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Purpose ;
-        sh:message "activity does not contain purpose of processing." ;
-    ] ;
-
-    # Data Subjects
-    sh:property [
-        sh:path dpv:hasDataSubject ;
-        dct:identifier "A30-1-15"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataSubject ;
-        sh:message "activity does not contain categories of data subjects." ;
-    ] ;
-
-    # Personal Data Categories
-    sh:property [
-        sh:path dpv:hasPersonalData ;
-        dct:identifier "A30-1-16"^^xsd:string;
-        sh:minCount 1 ;
-        #sh:class dpv:PersonalData ;
-        sh:message "activity does not contain categories of personal data." ;
-    ] ;
-
-
-
-    # Transfer validation
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-18"^^xsd:string;
-        dct:identifier "A30-1-43"^^xsd:string;
-        sh:minCount 0 ;
-        sh:node dpv:OrganisationalMeasure ;
-        sh:message "organisational measures not contained." ;
-    ] ;
-
-    # Storage
-    sh:property [
-        sh:path dpv:hasStorageCondition ;
-        dct:identifier "A30-1-24"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:StorageDuration ;
-        sh:message "duration of storage of personal data after which it will be erased if not furtehr needed not contained." ;
-    ] ;
-
-    # Technical Measures
-    sh:property [
-        sh:path dpv:hasTechnicalMeasure ;
-        dct:identifier "A30-1-25"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:TechnicalMeasure ;
-        sh:message "technical measures not contained." ;
-    ] ;
-
-    # Organisational Measures
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-26"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:OrganisationalMeasure ;
-        sh:message "organisational measures not contained." ;
-    ] ;
-
-    .
-
-#################################################
-# Transfer Shape
-#################################################
-
-ex:TransferShape
-    a sh:NodeShape ;
-    dct:identifier "A30-1-18"^^xsd:string;
-    sh:targetClass dpv:Transfer ;
-
-    # Recipients
-    sh:property [
-        sh:path dpv:hasDataImporter ;
-        dct:identifier "A30-1-17"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Recipient ;
-        sh:message "Activity does not contain categories of recipients." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasLegalBasis ;
-        sh:minCount 1 ;
-        sh:message "Transfer must specify a legal basis." ;
+ex:
+    sh:declare [
+        sh:prefix "dpv" ;
+        sh:namespace "https://w3id.org/dpv#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "tech" ;
+        sh:namespace "https://w3id.org/dpv/tech#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "eu-aiact" ;
+        sh:namespace "https://w3id.org/dpv/legal/eu/aiact#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "schema" ;
+        sh:namespace "https://schema.org/"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdf" ;
+        sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "rdfs" ;
+        sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ;
+    ] , [
+        sh:prefix "dct" ;
+        sh:namespace "http://purl.org/dc/terms/"^^xsd:anyURI ;
     ] .
 
 #################################################
-# Recipient Shape
+# Scope: there must be a high-risk AI system
 #################################################
 
-ex:RecipientShape
+ex:AIActArt11ScopeShape
     a sh:NodeShape ;
-    sh:targetClass dpv:Recipient ;
+    sh:targetNode recitals:AIActArticle11Scope ;
 
-    #############################################
-    # 1. Missing Location
-    #############################################
+    # EU AI Act Art. 11 scope: fails when the data has nothing this article applies to
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Location of recipient not identified." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-19"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-0"^^xsd:string ;
+        sh:message "No high-risk AI system (eu-aiact:HighRiskAISystem) found; Art. 11 cannot be assessed." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { ?s rdf:type eu-aiact:HighRiskAISystem . }
+            }
+        """ ;
+    ] .
+
+#################################################
+# High-risk AI system
+#################################################
+
+ex:AIActArt11SystemShape
+    a sh:NodeShape ;
+    sh:targetClass eu-aiact:HighRiskAISystem ;
+
+    # Art. 11(1): technical documentation exists
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-1-1"^^xsd:string ;
+        sh:message "High-risk AI system has no technical documentation (tech:hasDocumentation, a eu-aiact:TechnicalDocumentation) (Art. 11(1))." ;
+        sh:select """
+            SELECT $this WHERE {
                 FILTER NOT EXISTS {
-                    $this dpv:hasLocation ?loc .
+                    $this tech:hasDocumentation ?doc .
+                    ?doc rdf:type eu-aiact:TechnicalDocumentation .
                 }
             }
         """ ;
     ] ;
 
-    #############################################
-    # 2. Third Country Warning
-    #############################################
+    # Annex IV 1(a): provider and intended purpose
+    sh:property [
+        sh:path tech:hasProvider ;
+        dct:identifier "AIA11-AIV-1"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Provider of the AI system (tech:hasProvider) is not identified (Annex IV 1(a))." ;
+    ] ;
+
+    # EU AI Act Art. 11, Annex IV point 1: intended purpose
+    sh:property [
+        sh:path [ sh:alternativePath ( dpv:hasPurpose tech:hasIntendedUse ) ] ;
+        dct:identifier "AIA11-AIV-1"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Intended purpose of the AI system (tech:hasIntendedUse or dpv:hasPurpose) is not stated (Annex IV 1(a))." ;
+    ] ;
+
+    # Annex IV 1(a)-(b): versions
+    sh:property [
+        sh:path schema:version ;
+        dct:identifier "AIA11-AIV-1"^^xsd:string ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Version of the AI system (schema:version) is not stated (Annex IV 1(a))." ;
+    ] ;
+
+    # Art. 11(1): drawn up before placing on the market / putting into service
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Location of recipient is a third country." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-20"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-1-2"^^xsd:string ;
+        sh:message "Technical documentation was drawn up after the AI system was placed on the market or put into service (Art. 11(1))." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
-
-                # Case 1: explicit third country relation
-                {
-                    $this dpv:hasThirdCountry ?tc .
-                }
-
-                UNION
-
-                # Case 2: location typed as ThirdCountry
-                {
-                    $this dpv:hasLocation ?loc .
-                    ?loc rdf:type dpv:ThirdCountry .
-                }
-            } LIMIT 1
+            SELECT $this ?value WHERE {
+                $this tech:hasDocumentation ?value .
+                ?value rdf:type eu-aiact:TechnicalDocumentation ;
+                       dct:created ?created .
+                $this tech:hasMarketAvailabilityStatus|tech:hasProvisionStatus ?status .
+                ?status rdf:type ?c ;
+                        dct:date ?onMarket .
+                FILTER (?c IN (eu-aiact:PlacedOnMarket, eu-aiact:PlacedOnEUMarket,
+                               eu-aiact:PutIntoService, eu-aiact:PutIntoServiceInEU))
+                # Compare the ISO date part so xsd:date and xsd:dateTime mix
+                FILTER (SUBSTR(STR(?created), 1, 10) > SUBSTR(STR(?onMarket), 1, 10))
+            }
         """ ;
     ] ;
 
-    #############################################
-    # 3. International Organisation Warning
-    #############################################
+    # Art. 11(1): kept up to date
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "Recipient is an international organisation." ;
-        sh:severity sh:Warning ;
-        dct:identifier "A30-1-22"^^xsd:string ;
-
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-1-3"^^xsd:string ;
+        sh:message "Technical documentation does not cover the current version of the AI system (schema:version); it must be kept up to date (Art. 11(1))." ;
         sh:select """
-            SELECT DISTINCT $this WHERE {
-                $this rdf:type dpv:InternationalOrganisation .
-            } LIMIT 1
+            SELECT $this ?value WHERE {
+                $this schema:version ?version ;
+                      tech:hasDocumentation ?value .
+                ?value rdf:type eu-aiact:TechnicalDocumentation .
+                FILTER NOT EXISTS { ?value schema:version ?version . }
+            }
         """ ;
     ] .
 
-# ex:RecipientShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:Recipient ;
-
-#     # Optional warning: if recipient does NOT have a location
-#     sh:property [
-#         sh:path dpv:hasLocation ;
-#         dct:identifier "A30-1-19"^^xsd:string;
-#         dct:identifier "A30-1-44"^^xsd:string;
-#         sh:minCount 1 ;               # optional, not mandatory
-#         sh:severity sh:Warning ;      # warning
-#         sh:message "Location of recipient not identified." ;
-#     ] ;
-
-#     # Optional warning: Location of recipient is not third country
-#     sh:property [
-#         sh:path dpv:hasLocation ;
-#         sh:hasValue dpv:ThirdCountry ;
-#         dct:identifier "A30-1-20"^^xsd:string;
-#         dct:identifier "A30-1-45"^^xsd:string;
-#         sh:minCount 1 ;               # optional
-#         sh:in ( dpv:ThirdCountry ) ;   # third country allowed
-#         sh:severity sh:Warning ;
-#         sh:message "Location of recipient is a third country." ;
-#     ] ;
-    
-#     # Optional warning: if recipient is not InternationalOrganisation
-#     sh:property [
-#         sh:path rdf:type ;
-#         sh:hasValue dpv:InternationalOrganisation ;
-#         dct:identifier "A30-1-22"^^xsd:string;
-#         dct:identifier "A30-1-46"^^xsd:string;
-#         sh:minCount 1 ;               # optional
-#         sh:severity sh:Warning ;      # warning, not violation
-#         sh:message "Location of recipient is international organisation." ;
-#     ] 
-#     .
-
-  # Optional warning: Location of recipient is not third country
-    # sh:sparql [
-    #     a sh:SPARQLConstraint ;
-    #     sh:message "Recipient is located in a third country." ;
-    #     sh:severity sh:Warning ;
-    #     sh:select """
-    #         SELECT $this WHERE {
-    #             $this dpv:hasLocation ?loc .
-    #             ?loc rdf:type dpv:ThirdCountry .
-    #         }
-    #     """ ;
-    # ] ;
-
-    # sh:sparql [
-    #     a sh:SPARQLConstraint ;
-    #     sh:message "Recipient is an international organisation." ;
-    #     sh:severity sh:Warning ;
-    #     sh:select """
-    #         SELECT DISTINCT $this WHERE {
-    #             $this rdf:type dpv:InternationalOrganisation .
-    #         }
-    #     """ ;
-    # ] ;.
-
 #################################################
-# Controller ROPA Shape
+# Technical documentation (Annex IV)
 #################################################
 
-# ex:ControllerROPAShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:ROPA ;
-
-#     sh:property [
-#         sh:path dpv:hasDataController ;
-#         sh:minCount 1 ;
-#         sh:class dpv:DataController ;
-#         sh:message "ROPA must identify a Data Controller." ;
-#     ] ;
-
-# .
-
-ex:ControllerROPAShape
+ex:AIActArt11DocumentationShape
     a sh:NodeShape ;
-    sh:targetSubjectsOf dpv:hasDataController ;
+    sh:targetClass eu-aiact:TechnicalDocumentation ;
 
+    # EU AI Act Art. 11(1): technical documentation has no creation date, so it cannot be shown to predate placing on the market
     sh:property [
-        sh:path dpv:hasProcess ;
-        #dct:identifier "A30-1-22"^^xsd:string;
+        sh:path dct:created ;
+        dct:identifier "AIA11-1-2"^^xsd:string ;
         sh:minCount 1 ;
-        sh:class dpv:Process ;
-        sh:message "Controller ROPA must reference at least one processing activity." ;
+        sh:message "Technical documentation has no creation date (dct:created), so it cannot be shown to predate placing on the market (Art. 11(1))." ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasRepresentative ;
-        dct:identifier "A30-1-5"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Representative ;
-        sh:message "Controller ROPA must include the Controller's Representative." ;
+    # EU AI Act Art. 11, Annex IV point 1
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-1"^^xsd:string ;
+        sh:message "Technical documentation lacks a general description of the AI system, including the instructions for use (eu-aiact:InstructionForUse) (Annex IV 1)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (eu-aiact:InstructionForUse))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasDataProtectionOfficer ;
-        dct:identifier "A30-1-8"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataProtectionOfficer ;
-        sh:message "Controller ROPA must include a Data Protection Officer where required." ;
+    # EU AI Act Art. 11, Annex IV point 2
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-2"^^xsd:string ;
+        sh:message "Technical documentation lacks a detailed description of the system's elements and development process, including its architecture (eu-aiact:SystemArchitectureDescription) (Annex IV 2)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (eu-aiact:SystemArchitectureDescription))
+                }
+            }
+        """ ;
     ] ;
 
-.
-
-#################################################
-# Controller Shape
-#################################################
-
-ex:ControllerShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataController ;
-
-    sh:property [
-        sh:path dpv:hasRecordOfActivity ;
-        dct:identifier "A30-1-1"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:ROPA ;
-        sh:message "Controller does not have a ROPA." ] ; 
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-3"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." ;
+    # EU AI Act Art. 11, Annex IV point 3
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-3"^^xsd:string ;
+        sh:message "Technical documentation lacks information on monitoring, functioning and control, including human oversight measures (eu-aiact:ProviderHumanOversightMeasure) (Annex IV 3)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (eu-aiact:ProviderHumanOversightMeasure))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-4"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA does not contain contact details of controller." ;
+    # EU AI Act Art. 11, Annex IV point 4
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-4"^^xsd:string ;
+        sh:message "Technical documentation lacks a description of the appropriateness of the performance metrics (eu-aiact:AISystemPerformance) (Annex IV 4)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (eu-aiact:AISystemPerformance))
+                }
+            }
+        """ ;
     ] ;
 
-
-.
-
-#################################################
-# Processor Shape
-#################################################
-
-ex:ProcessorShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataProcessor ;
-
-    sh:property [
-        sh:path dpv:hasRecordOfActivity ;
-        dct:identifier "A30-1-27"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:ROPA ;
-        sh:message "Data Processor does not have a ROPA." ] ;
-        
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-29"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA deos not contain name of controller." 
+    # EU AI Act Art. 11, Annex IV point 5
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-5"^^xsd:string ;
+        sh:message "Technical documentation lacks a description of the risk management system under Art. 9 (eu-aiact:RiskManagementSystem) (Annex IV 5)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (eu-aiact:RiskManagementSystem))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-30"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:message "ROPA does not contain contact details of controller." 
-    ] ;
-.
-
-
-#################################################
-# Processor ROPA Shape
-#################################################
-
-# ex:ProcessorROPAShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:DataProcessingRecord ;
-
-#     sh:property [
-#         sh:path dpv:hasDataProcessor ;
-#         sh:minCount 1 ;
-#         sh:class dpv:DataProcessor ;
-#         sh:message "Processor ROPA must identify a Data Processor." ;
-#     ] ;
-
-ex:ProcessorROPAShape
-    a sh:NodeShape ;
-    sh:targetSubjectsOf dpv:hasDataProcessor ;
-
-    sh:property [
-        sh:path dpv:hasProcess ;
-        sh:minCount 1 ;
-        sh:class dpv:Process ;
-        sh:message "Processor ROPA must reference at least one processing activity." ;
+    # EU AI Act Art. 11, Annex IV point 8
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-8"^^xsd:string ;
+        sh:message "Technical documentation lacks a copy of the EU declaration of conformity (eu-aiact:EUDeclarationOfConformity) (Annex IV 8)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (eu-aiact:EUDeclarationOfConformity))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasRepresentative ;
-        dct:identifier "A30-1-31"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:Representative ;
-        sh:message "Processor ROPA must include its Representative." ;
+    # EU AI Act Art. 11, Annex IV point 9
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-9"^^xsd:string ;
+        sh:message "Technical documentation lacks a description of the post-market monitoring system and plan (eu-aiact:PostMarketMonitoringPlan) (Annex IV 9)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* ?c .
+                    FILTER (?c IN (eu-aiact:PostMarketMonitoringPlan, eu-aiact:PostMarketMonitoringSystemDocumentation))
+                }
+            }
+        """ ;
     ] ;
 
-    sh:property [
-        sh:path dpv:hasDataProtectionOfficer ;
-        dct:identifier "A30-1-34"^^xsd:string;
-        sh:minCount 1 ;
-        sh:class dpv:DataProtectionOfficer ;
-        sh:message "Processor ROPA must include a Data Protection Officer where required." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasTechnicalMeasure ;
-        dct:identifier "A30-1-50"^^xsd:string;
-        sh:minCount 1 ;
-        sh:message "Processor ROPA must include technical security measures." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasOrganisationalMeasure ;
-        dct:identifier "A30-1-51"^^xsd:string;
-        sh:minCount 1 ;
-        sh:message "Processor ROPA must include organisational security measures." ;
+    # EU AI Act Art. 11, Annex IV point 7: standards applied or other solutions adopted
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-7"^^xsd:string ;
+        sh:message "Technical documentation lists neither the harmonised standards applied (dct:conformsTo) nor the other solutions adopted to meet the requirements (eu-aiact:CommonSpecification) (Annex IV 7)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS { $this dct:conformsTo ?standard . }
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* eu-aiact:CommonSpecification .
+                }
+            }
+        """ ;
     ] .
 
-#################################################
-# Representative Shape
-#################################################
-
-ex:RepresentativeShape
+# Same target, warning level
+ex:AIActArt11DocumentationWarningShape
     a sh:NodeShape ;
-    sh:targetClass dpv:Representative ;
+    sh:targetClass eu-aiact:TechnicalDocumentation ;
+    sh:severity sh:Warning ;
 
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-6"^^xsd:string;
-        dct:identifier "A30-1-32"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of controller's representative." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-7"^^xsd:string;
-        dct:identifier "A30-1-33"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of controller's representative." ;
+    # EU AI Act Art. 11, Annex IV point 6: changes through the lifecycle
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes ex: ;
+        dct:identifier "AIA11-AIV-6"^^xsd:string ;
+        sh:message "Technical documentation lacks a description of relevant changes made through the system's lifecycle (eu-aiact:ChangeDescription) (Annex IV 6)." ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    $this dct:hasPart ?part .
+                    ?part rdf:type?/rdfs:subClassOf* eu-aiact:ChangeDescription .
+                }
+            }
+        """ ;
     ] .
-
-
-
-
-#################################################
-# DPO Shape
-#################################################
-
-ex:DPOShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:DataProtectionOfficer ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-9"^^xsd:string;
-        dct:identifier "A30-1-35"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of data protection officer." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-10"^^xsd:string;
-        dct:identifier "A30-1-36"^^xsd:string;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of data protection officer." ;
-    ] .
-
-#################################################
-# Joint Controller Shape
-#################################################
-
-ex:JointControllerShape
-    a sh:NodeShape ;
-    sh:targetClass dpv:JointDataController ;
-
-    sh:property [
-        sh:path dpv:hasName ;
-        dct:identifier "A30-1-12"^^xsd:string;
-        sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain name of joint controller." ;
-    ] ;
-
-    sh:property [
-        sh:path dpv:hasContact ;
-        dct:identifier "A30-1-13"^^xsd:string;
-        sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:message "ROPA does not contain contact details of joint controller." ;
-    ] .
-
-#################################################
-# ROPA Exemption Rule (A30.5 logic)
-#################################################
-
-# ex:ROPAExemptionShape
-#     a sh:NodeShape ;
-#     sh:targetClass dpv:DataController ;
-
-#     sh:property [
-#         sh:path ex:employeeCount ;
-#         sh:datatype xsd:integer ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:isLowRiskProcessing ;
-#         sh:datatype xsd:boolean ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:isOccasionalProcessing ;
-#         sh:datatype xsd:boolean ;
-#     ] ;
-
-#     sh:property [
-#         sh:path ex:hasSpecialCategoryData ;
-#         sh:datatype xsd:boolean ;
-#     ] .
-
