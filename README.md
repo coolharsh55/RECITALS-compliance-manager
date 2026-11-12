@@ -47,6 +47,45 @@ expects.
 
 ---
 
+# Requirements
+
+## To run the system
+
+- Docker Desktop (or Docker Engine) with Docker Compose. The four services run
+  in containers, so nothing else needs to be installed.
+- An internet connection for the first build, which downloads the Fuseki and
+  Python images and the Python packages.
+- A `.env` file with `FUSEKI_USER` and `FUSEKI_PASSWORD` (copy `.env.example`).
+  Avoid spaces, `#`, `,` and `=` in the password.
+- Free local ports 3030 (Fuseki), 8000 (Input API), 8001 (Compliance API) and
+  8002 (Status API). All are bound to `127.0.0.1` only.
+- A web browser for `/docs` on each API and `/ui` on the Compliance API.
+
+## Components
+
+| Component | Version |
+|---|---|
+| Python services | `python:3.12-slim` |
+| FastAPI / Uvicorn | 0.143.0 / 0.54.0 |
+| pySHACL / rdflib | 0.40.1 / 7.6.0 |
+| requests / python-multipart | 2.34.2 / 0.0.32 |
+| Triple store | Apache Jena Fuseki (`stain/jena-fuseki`), TDB2 storage in a Docker volume |
+
+## Input data
+
+RDF in Turtle (UTF-8) using [DPV](https://w3id.org/dpv) 2.3 terms, including its
+`pd:`, `tech:`, `ai:` and `eu-aiact:` extensions, and `recitals:` terms where DPV
+has none. The header of each shapes file lists the terms its article expects;
+`examples/` has a compliant and a non-compliant file for every article.
+
+## To run the tests
+
+Python 3.10 or newer (3.12 recommended) and the packages in
+`tests/requirements.txt`. Docker is not needed: the tests use an in-memory
+stand-in for Fuseki. See [Tests](#tests).
+
+---
+
 # How to Run the Project
 
 ## 1. Install Docker
