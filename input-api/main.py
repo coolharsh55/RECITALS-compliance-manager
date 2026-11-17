@@ -79,7 +79,7 @@ RECITALS = Namespace("http://example.org/recitals/")
 DPV = Namespace("https://w3id.org/dpv#")
 PROV = Namespace("http://www.w3.org/ns/prov#")
 
-DC = Namespace("http://www.w3.org/ns/dc#")
+DC = Namespace("http://purl.org/dc/terms/")
 
 # --------------------------------------------------
 # Fuseki configuration
